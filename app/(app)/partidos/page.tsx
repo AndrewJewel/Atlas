@@ -2,13 +2,25 @@
 import { useState } from "react";
 import { AppHeader } from "@/components/app-header";
 import { useCountdown } from "@/hooks/use-countdown";
+import { useLiveScores } from "@/hooks/use-live-scores";
 import { MATCHES, MATCH_DAYS, KICKOFF } from "@/lib/data";
+
+function groupLabel(group: string) {
+  if (group === "R32")  return "Octavos de final";
+  if (group === "QF")   return "Cuartos de final";
+  if (group === "SF")   return "Semifinal";
+  if (group === "3P")   return "3er y 4to puesto";
+  if (group === "FINAL") return "🏆 Final";
+  return `Grupo ${group}`;
+}
 
 export default function PartidosPage() {
   const [activeDay, setActiveDay] = useState(0);
   const [notified, setNotified] = useState<Record<number, boolean>>({});
   const countdown = useCountdown(KICKOFF);
-  const matches = MATCHES.filter((m) => m.date === MATCH_DAYS[activeDay].date);
+  const { scores, hasLive } = useLiveScores();
+
+  const dayMatches = MATCHES.filter((m) => m.date === MATCH_DAYS[activeDay].date);
 
   const toggleNotify = (id: number, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -28,31 +40,40 @@ export default function PartidosPage() {
           className="text-center text-[11px] font-bold tracking-[0.18em] text-atlas-muted mb-2.5"
           style={{ fontFamily: "var(--font-display)" }}
         >
-          FALTAN PARA EL MUNDIAL
+          {hasLive ? "⚽ PARTIDOS EN VIVO AHORA" : "FALTAN PARA EL MUNDIAL"}
         </p>
-        <div className="flex justify-center gap-5">
-          {([
-            [countdown.days, "DÍAS"],
-            [countdown.hours, "HORAS"],
-            [countdown.mins, "MIN"],
-            [countdown.secs, "SEG"],
-          ] as [number, string][]).map(([val, lbl], i) => (
-            <div key={i} className="flex flex-col items-center gap-1">
-              <span
-                className="text-[40px] font-black leading-none tracking-tight"
-                style={{ fontFamily: "var(--font-display)", color: lbl === "SEG" ? "#F97316" : "#EDF0FF" }}
-              >
-                {String(val).padStart(2, "0")}
-              </span>
-              <span
-                className="text-[10px] font-semibold tracking-widest text-atlas-dimmed"
-                style={{ fontFamily: "var(--font-display)" }}
-              >
-                {lbl}
-              </span>
-            </div>
-          ))}
-        </div>
+        {!hasLive ? (
+          <div className="flex justify-center gap-5">
+            {([
+              [countdown.days, "DÍAS"],
+              [countdown.hours, "HORAS"],
+              [countdown.mins, "MIN"],
+              [countdown.secs, "SEG"],
+            ] as [number, string][]).map(([val, lbl], i) => (
+              <div key={i} className="flex flex-col items-center gap-1">
+                <span
+                  className="text-[40px] font-black leading-none tracking-tight"
+                  style={{ fontFamily: "var(--font-display)", color: lbl === "SEG" ? "#F97316" : "#EDF0FF" }}
+                >
+                  {String(val).padStart(2, "0")}
+                </span>
+                <span
+                  className="text-[10px] font-semibold tracking-widest text-atlas-dimmed"
+                  style={{ fontFamily: "var(--font-display)" }}
+                >
+                  {lbl}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex items-center justify-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+            <span className="text-[15px] font-bold text-atlas-text" style={{ fontFamily: "var(--font-display)" }}>
+              Hay partidos en curso — bajá para verlos
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Day Picker */}
@@ -76,57 +97,92 @@ export default function PartidosPage() {
 
       {/* Matches */}
       <div className="flex-1 overflow-y-auto pb-4">
-        {matches.map((m) => (
-          <div
-            key={m.id}
-            className="mx-4 mb-2 rounded-2xl overflow-hidden cursor-pointer"
-            style={{ background: "#0F1228", border: "1px solid rgba(255,255,255,0.06)" }}
-          >
-            <div className="flex justify-between items-center px-4 pt-3">
-              <span
-                className="text-[13px] font-bold text-atlas-text tracking-wide"
-                style={{ fontFamily: "var(--font-display)" }}
-              >
-                {m.group === "R32" ? "Octavos de final"
-                  : m.group === "QF" ? "Cuartos de final"
-                  : m.group === "SF" ? "Semifinal"
-                  : m.group === "3P" ? "3er y 4to puesto"
-                  : m.group === "FINAL" ? "🏆 Final"
-                  : `Grupo ${m.group}`} · Partido {m.num}
-              </span>
-              <div className="flex items-center gap-2">
-                <span className="text-[12px] font-semibold text-atlas-primary">
-                  {MATCH_DAYS[activeDay].label}
-                </span>
-                <button
-                  onClick={(e) => toggleNotify(m.id, e)}
-                  className="text-[14px]"
-                  style={{ color: notified[m.id] ? "#F97316" : "#4A5178" }}
+        {dayMatches.map((m) => {
+          const live = scores.get(`${m.home.code}-${m.away.code}`);
+          const isLive     = live?.status === "live";
+          const isFinished = live?.status === "finished";
+          const hasScore   = isLive || isFinished;
+
+          return (
+            <div
+              key={m.id}
+              className="mx-4 mb-2 rounded-2xl overflow-hidden cursor-pointer"
+              style={{
+                background: isLive ? "linear-gradient(135deg,#1A1228 0%,#0F1228 100%)" : "#0F1228",
+                border: `1px solid ${isLive ? "rgba(249,115,22,0.3)" : "rgba(255,255,255,0.06)"}`,
+              }}
+            >
+              {/* Header */}
+              <div className="flex justify-between items-center px-4 pt-3">
+                <span
+                  className="text-[13px] font-bold text-atlas-text tracking-wide"
+                  style={{ fontFamily: "var(--font-display)" }}
                 >
-                  {notified[m.id] ? "🔔" : "🔕"}
-                </button>
-              </div>
-            </div>
-            <div className="px-4 pb-3.5 pt-2">
-              <div className="flex items-center gap-2.5 mb-1.5">
-                <span className="text-[22px]">{m.home.flag}</span>
-                <span className="text-[15px] font-medium text-atlas-text">{m.home.name}</span>
-              </div>
-              <div className="flex items-center gap-2.5 mb-2.5">
-                <span className="text-[22px]">{m.away.flag}</span>
-                <span className="text-[15px] font-medium text-atlas-text">{m.away.name}</span>
-              </div>
-              <div className="flex flex-col gap-0.5 pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                <span className="text-[15px] font-bold text-atlas-text" style={{ fontFamily: "var(--font-display)" }}>
-                  {m.time} p.m.
+                  {groupLabel(m.group)} · Partido {m.num}
                 </span>
-                <span className="text-[12px] text-atlas-dimmed">{m.venue}</span>
-                <span className="text-[12px] text-atlas-dimmed">{m.city}</span>
-                <span className="text-[13px] font-semibold text-atlas-primary mt-0.5">Ver detalles</span>
+                <div className="flex items-center gap-2">
+                  {isLive && (
+                    <div className="flex items-center gap-1 px-2 py-0.5 rounded-full" style={{ background: "rgba(239,68,68,0.15)" }}>
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                      <span className="text-[11px] font-bold text-red-400">{live.minute}</span>
+                    </div>
+                  )}
+                  {isFinished && (
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(34,197,94,0.12)", color: "#22C55E" }}>
+                      FIN
+                    </span>
+                  )}
+                  <button
+                    onClick={(e) => toggleNotify(m.id, e)}
+                    className="text-[14px]"
+                    style={{ color: notified[m.id] ? "#F97316" : "#4A5178" }}
+                  >
+                    {notified[m.id] ? "🔔" : "🔕"}
+                  </button>
+                </div>
+              </div>
+
+              {/* Teams + Score */}
+              <div className="px-4 pb-3.5 pt-2">
+                <div className="flex items-center gap-2.5 mb-1.5">
+                  <span className="text-[22px]">{m.home.flag}</span>
+                  <span className="flex-1 text-[15px] font-medium text-atlas-text">{m.home.name}</span>
+                  {hasScore && (
+                    <span
+                      className="text-[28px] font-black leading-none min-w-[24px] text-right"
+                      style={{ fontFamily: "var(--font-display)", color: isLive ? "#F97316" : "#EDF0FF" }}
+                    >
+                      {live!.homeScore}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2.5 mb-2.5">
+                  <span className="text-[22px]">{m.away.flag}</span>
+                  <span className="flex-1 text-[15px] font-medium text-atlas-text">{m.away.name}</span>
+                  {hasScore && (
+                    <span
+                      className="text-[28px] font-black leading-none min-w-[24px] text-right"
+                      style={{ fontFamily: "var(--font-display)", color: isLive ? "#F97316" : "#EDF0FF" }}
+                    >
+                      {live!.awayScore}
+                    </span>
+                  )}
+                </div>
+
+                {/* Footer */}
+                <div className="flex flex-col gap-0.5 pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                  {!hasScore && (
+                    <span className="text-[15px] font-bold text-atlas-text" style={{ fontFamily: "var(--font-display)" }}>
+                      {m.time} hrs
+                    </span>
+                  )}
+                  <span className="text-[12px] text-atlas-dimmed">{m.venue}</span>
+                  <span className="text-[12px] text-atlas-dimmed">{m.city}</span>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
