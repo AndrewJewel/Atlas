@@ -1,7 +1,7 @@
 "use client";
-import { useState } from "react";
-import { AVATARS } from "@/lib/data";
-import type { User } from "@/lib/types";
+import { useState, useMemo } from "react";
+import { WC_TEAMS } from "@/lib/data";
+import type { User, Team } from "@/lib/types";
 
 interface Props {
   onComplete: (user: User) => void;
@@ -11,7 +11,15 @@ export function Onboarding({ onComplete }: Props) {
   const [step, setStep] = useState(0);
   const [username, setUsername] = useState("");
   const [usernameError, setUsernameError] = useState("");
-  const [selectedAvatar, setSelectedAvatar] = useState<number | null>(null);
+  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
+  const [search, setSearch] = useState("");
+
+  const filteredTeams = useMemo(() =>
+    search.trim()
+      ? WC_TEAMS.filter((t) => t.name.toLowerCase().includes(search.toLowerCase()))
+      : WC_TEAMS,
+    [search]
+  );
 
   const handleUsernameNext = () => {
     if (username.trim().length < 3) {
@@ -22,9 +30,20 @@ export function Onboarding({ onComplete }: Props) {
     setStep(2);
   };
 
+  const handleSelectTeam = (team: Team) => {
+    setSelectedTeam(team);
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  };
+
   const handleFinish = () => {
-    if (selectedAvatar === null) return;
-    onComplete({ username: username.trim(), avatar: AVATARS[selectedAvatar] });
+    if (!selectedTeam) return;
+    onComplete({
+      username: username.trim(),
+      avatar: { emoji: selectedTeam.flag, bg: "#0F1228" },
+      team: selectedTeam,
+    });
   };
 
   return (
@@ -103,48 +122,79 @@ export function Onboarding({ onComplete }: Props) {
         </div>
       )}
 
-      {/* Step 2 — Avatar */}
+      {/* Step 2 — Selección */}
       {step === 2 && (
-        <div className="flex flex-col flex-1 px-6 pt-5">
+        <div className="flex flex-col flex-1 px-6 pt-5 overflow-hidden">
           <Logo />
-          <div className="h-8" />
+          <div className="h-6" />
           <StepBadge label="2 / 2" />
-          <h2 style={{ fontFamily: "var(--font-display)" }} className="text-[30px] font-extrabold text-atlas-text text-center mb-1.5">
-            Elige tu avatar
+          <h2 style={{ fontFamily: "var(--font-display)" }} className="text-[28px] font-extrabold text-atlas-text text-center mb-1">
+            ¿De qué selección eres?
           </h2>
-          <p className="text-[14px] text-atlas-muted text-center mb-5">
-            Así te verán tus rivales en la polla 😈
+          <p className="text-[13px] text-atlas-muted text-center mb-3">
+            Te avisaremos cuando jueguen 🔔
           </p>
-          <div className="grid grid-cols-5 gap-2.5 w-full">
-            {AVATARS.map((av, i) => (
-              <button
-                key={i}
-                onClick={() => setSelectedAvatar(i)}
-                className="aspect-square rounded-2xl flex items-center justify-center text-[22px] transition-all"
-                style={{
-                  background: av.bg,
-                  outline: selectedAvatar === i ? "3px solid #F97316" : "3px solid transparent",
-                  outlineOffset: "2px",
-                  transform: selectedAvatar === i ? "scale(1.1)" : "scale(1)",
-                }}
-              >
-                {av.emoji}
-              </button>
-            ))}
+          <input
+            placeholder="Buscar país…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full px-4 py-2.5 rounded-2xl text-atlas-text text-[14px] outline-none mb-3 flex-shrink-0"
+            style={{
+              background: "#181B30",
+              border: "1.5px solid rgba(255,255,255,0.1)",
+              fontFamily: "var(--font-sans)",
+            }}
+          />
+          <div className="flex-1 overflow-y-auto min-h-0 -mx-1">
+            <div className="grid grid-cols-6 gap-1.5 px-1 pb-2">
+              {filteredTeams.map((team) => (
+                <button
+                  key={team.code}
+                  onClick={() => handleSelectTeam(team)}
+                  className="flex flex-col items-center justify-center gap-0.5 py-2 px-1 rounded-xl transition-all"
+                  style={{
+                    background: selectedTeam?.code === team.code ? "rgba(249,115,22,0.18)" : "#0F1228",
+                    outline: selectedTeam?.code === team.code ? "2px solid #F97316" : "2px solid transparent",
+                    outlineOffset: "1px",
+                    transform: selectedTeam?.code === team.code ? "scale(1.08)" : "scale(1)",
+                  }}
+                >
+                  <span className="text-[26px] leading-none">{team.flag}</span>
+                  <span
+                    className="text-center leading-tight w-full overflow-hidden"
+                    style={{
+                      fontSize: "8px",
+                      color: selectedTeam?.code === team.code ? "#F97316" : "rgba(255,255,255,0.45)",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                    }}
+                  >
+                    {team.name}
+                  </span>
+                </button>
+              ))}
+              {filteredTeams.length === 0 && (
+                <div className="col-span-6 text-center text-atlas-muted text-[13px] py-8">
+                  No se encontró "{search}"
+                </div>
+              )}
+            </div>
           </div>
-          <div className="h-5" />
-          <button
-            onClick={handleFinish}
-            style={{ background: "#F97316", fontFamily: "var(--font-display)", opacity: selectedAvatar !== null ? 1 : 0.4 }}
-            className="w-full py-4 rounded-2xl text-white text-[20px] font-bold tracking-wide transition-opacity"
-          >
-            Entrar al Mundial 🚀
-          </button>
+          <div className="pt-3 flex-shrink-0">
+            <button
+              onClick={handleFinish}
+              style={{ background: "#F97316", fontFamily: "var(--font-display)", opacity: selectedTeam ? 1 : 0.4 }}
+              className="w-full py-4 rounded-2xl text-white text-[20px] font-bold tracking-wide transition-opacity"
+            >
+              {selectedTeam ? `Entrar con ${selectedTeam.flag} ${selectedTeam.name}` : "Entrar al Mundial 🚀"}
+            </button>
+          </div>
         </div>
       )}
 
       {/* Step dots */}
-      <div className="flex justify-center gap-1.5 py-5 flex-shrink-0">
+      <div className="flex justify-center gap-1.5 py-4 flex-shrink-0">
         {[0, 1, 2].map((i) => (
           <div
             key={i}
@@ -177,7 +227,7 @@ function Logo() {
 
 function StepBadge({ label }: { label: string }) {
   return (
-    <div className="self-center mb-4 px-3.5 py-1 rounded-full text-[12px] font-bold tracking-widest text-atlas-primary"
+    <div className="self-center mb-3 px-3.5 py-1 rounded-full text-[12px] font-bold tracking-widest text-atlas-primary"
       style={{ background: "rgba(249,115,22,0.15)" }}>
       {label}
     </div>

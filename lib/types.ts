@@ -6,6 +6,7 @@ export interface Avatar {
 export interface User {
   username: string;
   avatar: Avatar;
+  team?: Team;
 }
 
 export interface Team {

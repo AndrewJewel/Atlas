@@ -4,10 +4,19 @@ import { useRouter } from "next/navigation";
 import { BottomNav } from "@/components/bottom-nav";
 import { AtlasWidget } from "@/components/atlas-widget";
 import { useUser } from "@/hooks/use-user";
+import { useMatchNotifications } from "@/hooks/use-match-notifications";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, loaded } = useUser();
   const router = useRouter();
+
+  useMatchNotifications(user?.team);
+
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
+  }, []);
 
   useEffect(() => {
     if (loaded && !user) router.replace("/");
