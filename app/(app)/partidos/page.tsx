@@ -69,7 +69,7 @@ export default function PartidosPage() {
               fontFamily: "var(--font-sans)",
             }}
           >
-            {day.label} jun
+            {day.label}
           </button>
         ))}
       </div>
@@ -87,11 +87,16 @@ export default function PartidosPage() {
                 className="text-[13px] font-bold text-atlas-text tracking-wide"
                 style={{ fontFamily: "var(--font-display)" }}
               >
-                Grupo {m.group} · Partido {m.num}
+                {m.group === "R32" ? "Octavos de final"
+                  : m.group === "QF" ? "Cuartos de final"
+                  : m.group === "SF" ? "Semifinal"
+                  : m.group === "3P" ? "3er y 4to puesto"
+                  : m.group === "FINAL" ? "🏆 Final"
+                  : `Grupo ${m.group}`} · Partido {m.num}
               </span>
               <div className="flex items-center gap-2">
                 <span className="text-[12px] font-semibold text-atlas-primary">
-                  {MATCH_DAYS[activeDay].label} jun
+                  {MATCH_DAYS[activeDay].label}
                 </span>
                 <button
                   onClick={(e) => toggleNotify(m.id, e)}
