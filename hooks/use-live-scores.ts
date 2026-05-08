@@ -1,12 +1,10 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 
 export interface LiveMatch {
-  espnId: string;
   homeCode: string;
   awayCode: string;
-  homeName: string;
-  awayName: string;
   homeScore: number;
   awayScore: number;
   status: "scheduled" | "live" | "finished";
@@ -14,57 +12,66 @@ export interface LiveMatch {
   date: string;
 }
 
-// Some ESPN codes differ from FIFA/our codes — map to ours
-const ESPN_TO_OUR: Record<string, string> = {
-  SAF: "RSA",  // South Africa
-  IVC: "CIV",  // Ivory Coast
-  URY: "URU",  // Uruguay
-  PRY: "PAR",  // Paraguay
-  COD: "COD",
-  ALG: "ALG",
-  KOR: "KOR",
-  GER: "GER",
-  ENG: "ENG",
-  NED: "NED",
+type ScoreRow = {
+  id: string;
+  home_code: string;
+  away_code: string;
+  home_score: number;
+  away_score: number;
+  status: string;
+  minute: string;
+  match_date: string;
 };
 
-function normalizeCode(code: string): string {
-  return ESPN_TO_OUR[code] ?? code;
+function buildState(rows: ScoreRow[]): { map: Map<string, LiveMatch>; hasLive: boolean } {
+  const map = new Map<string, LiveMatch>();
+  let hasLive = false;
+  for (const row of rows) {
+    const match: LiveMatch = {
+      homeCode: row.home_code,
+      awayCode: row.away_code,
+      homeScore: row.home_score,
+      awayScore: row.away_score,
+      status: row.status as LiveMatch["status"],
+      minute: row.minute,
+      date: row.match_date,
+    };
+    map.set(`${row.home_code}-${row.away_code}`, match);
+    if (match.status === "live") hasLive = true;
+  }
+  return { map, hasLive };
+}
+
+async function fetchAll(
+  setScores: (m: Map<string, LiveMatch>) => void,
+  setHasLive: (v: boolean) => void
+) {
+  const { data } = await supabase.from("live_scores").select("*");
+  if (data?.length) {
+    const { map, hasLive } = buildState(data as ScoreRow[]);
+    setScores(map);
+    setHasLive(hasLive);
+  }
 }
 
 export function useLiveScores() {
   const [scores, setScores] = useState<Map<string, LiveMatch>>(new Map());
   const [hasLive, setHasLive] = useState(false);
 
-  const fetchScores = useCallback(async () => {
-    try {
-      const res = await fetch("/api/live");
-      if (!res.ok) return;
-      const data: { matches: LiveMatch[] } = await res.json();
-
-      const map = new Map<string, LiveMatch>();
-      let live = false;
-
-      for (const m of data.matches) {
-        const hCode = normalizeCode(m.homeCode);
-        const aCode = normalizeCode(m.awayCode);
-        map.set(`${hCode}-${aCode}`, { ...m, homeCode: hCode, awayCode: aCode });
-        if (m.status === "live") live = true;
-      }
-
-      setScores(map);
-      setHasLive(live);
-    } catch {
-      // silent — live scores are a bonus feature
-    }
-  }, []);
-
   useEffect(() => {
-    fetchScores();
-    // Poll every 60s. If there's a live match, poll every 30s
-    const interval = setInterval(fetchScores, hasLive ? 30_000 : 60_000);
-    return () => clearInterval(interval);
-  }, [fetchScores, hasLive]);
+    fetchAll(setScores, setHasLive);
+
+    const channel = supabase
+      .channel("live_scores_rt")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "live_scores" },
+        () => fetchAll(setScores, setHasLive)
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
 
   return { scores, hasLive };
 }
