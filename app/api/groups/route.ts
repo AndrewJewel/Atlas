@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const sb = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
 const CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 function genCode() {
   return 'ATL-' + Array.from({ length: 4 }, () => CHARS[Math.floor(Math.random() * CHARS.length)]).join('');
@@ -14,6 +9,10 @@ function genCode() {
 // GET /api/groups?code=ATL-XXXX  → group preview (public, no auth)
 // GET /api/groups                → user's groups (requires x-user-id header)
 export async function GET(req: NextRequest) {
+  const sb = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
   const code = req.nextUrl.searchParams.get('code');
 
   if (code) {
@@ -48,6 +47,10 @@ export async function GET(req: NextRequest) {
 
 // POST /api/groups → create group
 export async function POST(req: NextRequest) {
+  const sb = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
   const userId = req.headers.get('x-user-id');
   const body = await req.json().catch(() => ({}));
   const { name, username, avatar } = body;
