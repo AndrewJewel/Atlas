@@ -1,13 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <!-- Background -->
-  <rect width="32" height="32" rx="7" fill="#090B19"/>
+  <!-- White background -->
+  <rect width="32" height="32" rx="7" fill="#FFFFFF"/>
   <!-- Orange border -->
   <rect x="1.5" y="1.5" width="29" height="29" rx="5.5" fill="none" stroke="#F97316" stroke-width="1.5"/>
-  <!-- Letter A — drawn as paths for crisp rendering at small sizes -->
-  <!-- Left leg -->
+  <!-- Letter A -->
   <polygon points="7,25 13.5,7 16,7 16,11 11.2,25" fill="#F97316"/>
-  <!-- Right leg -->
   <polygon points="25,25 18.5,7 16,7 16,11 20.8,25" fill="#F97316"/>
-  <!-- Crossbar -->
   <rect x="10" y="17.5" width="12" height="2.5" rx="1.25" fill="#F97316"/>
 </svg>
