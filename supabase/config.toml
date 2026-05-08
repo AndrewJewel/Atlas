@@ -1,0 +1,2 @@
+[functions.fetch-scores]
+verify_jwt = false
