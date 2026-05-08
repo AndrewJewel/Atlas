@@ -1,10 +1,24 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AppHeader } from "@/components/app-header";
 import { useCountdown } from "@/hooks/use-countdown";
 import { useLiveScores } from "@/hooks/use-live-scores";
+import { useUser } from "@/hooks/use-user";
 import { MATCHES, MATCH_DAYS, KICKOFF } from "@/lib/data";
 import { TeamFlag } from "@/components/flags/TeamFlag";
+
+const NOTIF_KEY = "atlas-notif";
+
+function loadNotif(): Record<number, boolean> | null {
+  try {
+    const s = localStorage.getItem(NOTIF_KEY);
+    return s ? JSON.parse(s) : null;
+  } catch { return null; }
+}
+
+function saveNotif(n: Record<number, boolean>) {
+  try { localStorage.setItem(NOTIF_KEY, JSON.stringify(n)); } catch { /* noop */ }
+}
 
 function BellIcon({ active, cardBg }: { active: boolean; cardBg: string }) {
   const stroke = active ? "#F97316" : "rgba(255,255,255,0.22)";
@@ -55,12 +69,35 @@ export default function PartidosPage() {
   const [notified, setNotified] = useState<Record<number, boolean>>({});
   const countdown = useCountdown(KICKOFF);
   const { scores, hasLive } = useLiveScores();
+  const { user } = useUser();
+
+  // Load from localStorage; auto-activate team matches on first visit
+  useEffect(() => {
+    const stored = loadNotif();
+    if (stored !== null) {
+      setNotified(stored);
+    } else if (user?.team) {
+      const initial: Record<number, boolean> = {};
+      MATCHES.forEach((m) => {
+        if (m.home.code === user.team!.code || m.away.code === user.team!.code) {
+          initial[m.id] = true;
+        }
+      });
+      setNotified(initial);
+      saveNotif(initial);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.team?.code]);
 
   const dayMatches = MATCHES.filter((m) => m.date === MATCH_DAYS[activeDay].date);
 
   const toggleNotify = (id: number, e: React.MouseEvent) => {
     e.stopPropagation();
-    setNotified((p) => ({ ...p, [id]: !p[id] }));
+    setNotified((prev) => {
+      const next = { ...prev, [id]: !prev[id] };
+      saveNotif(next);
+      return next;
+    });
   };
 
   return (
