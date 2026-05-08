@@ -18,6 +18,7 @@ export interface Team {
 export interface TeamStanding {
   name: string;
   flag: string;
+  code: string;
   pj: number;
   g: number;
   e: number;
