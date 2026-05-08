@@ -1,6 +1,17 @@
 import type { User } from "./types";
 
 const KEY = "atlas_user";
+const ID_KEY = "atlas_user_id";
+
+export function getUserId(): string {
+  if (typeof window === "undefined") return "";
+  let id = localStorage.getItem(ID_KEY);
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem(ID_KEY, id);
+  }
+  return id;
+}
 
 export function getUser(): User | null {
   if (typeof window === "undefined") return null;

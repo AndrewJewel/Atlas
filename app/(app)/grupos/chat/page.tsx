@@ -1,44 +1,101 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useUser } from "@/hooks/use-user";
-import { DEMO_MESSAGES } from "@/lib/data";
-import type { Message } from "@/lib/types";
+import { supabase } from "@/lib/supabase";
+import { getUserId } from "@/lib/user-store";
+import type { Message, Avatar } from "@/lib/types";
 
-const MEMBERS = [
-  { name: "Rodri",    avatar: { emoji: "🦁", bg: "#F97316" } },
-  { name: "Caro",     avatar: { emoji: "🌟", bg: "#3B82F6" } },
-  { name: "Javi",     avatar: { emoji: "⚡", bg: "#EF4444" } },
-  { name: "Atlas IA", avatar: { emoji: "🤖", bg: "#F97316" }, isAtlas: true },
-];
+const GROUP_ID = "global";
+
+type DbRow = {
+  id: string;
+  user_id: string;
+  username: string;
+  avatar: string;
+  content: string;
+  created_at: string;
+};
+
+function rowToMessage(row: DbRow, myId: string): Message {
+  let avatar: Avatar = { emoji: "⭐", bg: "#F97316" };
+  try { avatar = JSON.parse(row.avatar) as Avatar; } catch { /* keep default */ }
+  return {
+    id: row.id,
+    user: row.username,
+    avatar,
+    content: row.content,
+    time: new Date(row.created_at).toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" }),
+    type: row.user_id === myId ? "me" : "user",
+  };
+}
 
 export default function ChatPage() {
   const { user } = useUser();
-  const [messages, setMessages] = useState<Message[]>(DEMO_MESSAGES);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [atlasTyping, setAtlasTyping] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
+  const myId = getUserId();
 
   const scrollDown = () => {
     if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
   };
   useEffect(() => { scrollDown(); }, [messages, atlasTyping]);
 
-  const sendMessage = async () => {
+  useEffect(() => {
+    supabase
+      .from("chat_messages")
+      .select("*")
+      .eq("group_id", GROUP_ID)
+      .order("created_at", { ascending: true })
+      .limit(50)
+      .then(({ data }) => {
+        if (data) setMessages((data as DbRow[]).map((r) => rowToMessage(r, myId)));
+      });
+
+    const channel = supabase
+      .channel("chat_global")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "chat_messages", filter: `group_id=eq.${GROUP_ID}` },
+        (payload) => {
+          const msg = rowToMessage(payload.new as DbRow, myId);
+          setMessages((prev) =>
+            prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]
+          );
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const sendMessage = useCallback(async () => {
     const text = input.trim();
     if (!text || !user) return;
     setInput("");
 
-    const myMsg: Message = {
-      id: Date.now(),
-      user: user.username,
-      avatar: user.avatar,
-      content: text,
-      time: new Date().toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" }),
-      type: "me",
-    };
-    setMessages((p) => [...p, myMsg]);
+    const { data } = await supabase
+      .from("chat_messages")
+      .insert({
+        group_id: GROUP_ID,
+        user_id: myId,
+        username: user.username,
+        avatar: JSON.stringify(user.avatar),
+        content: text,
+      })
+      .select()
+      .single();
+
+    if (data) {
+      setMessages((prev) => {
+        const msg = rowToMessage(data as DbRow, myId);
+        return prev.some((m) => m.id === msg.id) ? prev : [...prev, msg];
+      });
+    }
 
     const mentionsAtlas =
       text.toLowerCase().includes("atlas") ||
@@ -53,15 +110,15 @@ export default function ChatPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ message: text, context: "group-chat" }),
         });
-        const data = await res.json();
+        const resData = await res.json();
         setAtlasTyping(false);
         setMessages((p) => [
           ...p,
           {
-            id: Date.now() + 1,
+            id: `atlas-${Date.now()}`,
             user: "Atlas IA",
             avatar: { emoji: "🤖", bg: "#F97316" },
-            content: data.reply,
+            content: resData.reply,
             time: new Date().toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" }),
             type: "atlas",
           },
@@ -70,12 +127,7 @@ export default function ChatPage() {
         setAtlasTyping(false);
       }
     }
-  };
-
-  const allMembers = [
-    ...MEMBERS,
-    { name: user?.username ?? "Tú", avatar: user?.avatar ?? { emoji: "⭐", bg: "#F97316" }, isMe: true },
-  ];
+  }, [input, user, myId]);
 
   return (
     <div className="flex flex-col h-screen max-w-md mx-auto" style={{ background: "#090B19" }}>
@@ -87,9 +139,9 @@ export default function ChatPage() {
         <Link href="/grupos" className="text-[22px] text-atlas-text leading-none">←</Link>
         <div className="flex-1">
           <div style={{ fontFamily: "var(--font-display)" }} className="text-[18px] font-bold text-atlas-text tracking-tight">
-            Los Cracks 🔥
+            Chat Global 🌍
           </div>
-          <div className="text-[12px] text-atlas-primary">{allMembers.length} miembros · Atlas IA activo</div>
+          <div className="text-[12px] text-atlas-primary">Todos los fanáticos · Atlas IA activo</div>
         </div>
         <button onClick={() => setShowInfo(!showInfo)} className="text-[22px] text-atlas-muted">⋯</button>
       </div>
@@ -107,23 +159,14 @@ export default function ChatPage() {
         </div>
       )}
 
-      {/* Members Strip */}
-      <div
-        className="flex gap-3 px-4 py-2.5 overflow-x-auto flex-shrink-0"
-        style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}
-      >
-        {allMembers.map((m, i) => (
-          <div key={i} className="flex flex-col items-center gap-0.5 flex-shrink-0">
-            <div className="w-8 h-8 rounded-[10px] flex items-center justify-center text-[16px]" style={{ background: m.avatar.bg }}>
-              {m.avatar.emoji}
-            </div>
-            <span className="text-[10px] text-atlas-dimmed">{"isMe" in m && m.isMe ? "Tú" : m.name.split(" ")[0]}</span>
-          </div>
-        ))}
-      </div>
-
       {/* Messages */}
       <div ref={listRef} className="flex-1 overflow-y-auto px-3 py-4 flex flex-col gap-2.5">
+        {messages.length === 0 && (
+          <div className="flex flex-col items-center justify-center flex-1 gap-2 opacity-40">
+            <span className="text-[40px]">💬</span>
+            <span className="text-[14px] text-atlas-muted">Sé el primero en escribir</span>
+          </div>
+        )}
         {messages.map((msg) => {
           const isMe = msg.type === "me";
           const isAtlas = msg.type === "atlas";
