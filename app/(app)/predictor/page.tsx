@@ -240,20 +240,6 @@ export default function PredictorPage() {
                           }}
                         />
                       </div>
-                      {/* Draw toggle (only when not locked) */}
-                      {!lock && (
-                        <button
-                          onClick={() => toggleWinner(m.id, "draw")}
-                          className="px-3 py-0.5 rounded-full text-[11px] font-semibold transition-all"
-                          style={{
-                            background: d.winner === "draw" ? "rgba(249,115,22,0.15)" : "rgba(255,255,255,0.05)",
-                            border: `1px solid ${d.winner === "draw" ? "rgba(249,115,22,0.5)" : "rgba(255,255,255,0.1)"}`,
-                            color: d.winner === "draw" ? "#F97316" : "#4A5178",
-                          }}
-                        >
-                          Empate
-                        </button>
-                      )}
                     </div>
 
                     {/* Away */}
