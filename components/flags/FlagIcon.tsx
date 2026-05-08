@@ -122,7 +122,7 @@ export function FlagIcon({
             alt={label}
             width={px}
             height={px}
-            sizes={`${px}px`}
+            unoptimized
             style={{
               width:          '100%',
               height:         '100%',
@@ -131,7 +131,6 @@ export function FlagIcon({
               transform:      'scale(1.06)',
               display:        'block',
             }}
-            priority={false}
           />
           <div style={rimStyle} aria-hidden />
           <div style={glossStyle} aria-hidden />
