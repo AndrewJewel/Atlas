@@ -7,7 +7,7 @@ import { useUser } from "@/hooks/use-user";
 import { useMatchNotifications } from "@/hooks/use-match-notifications";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { user, loaded } = useUser();
+  const { user, authSession, loaded } = useUser();
   const router = useRouter();
 
   useMatchNotifications(user?.team);
@@ -19,8 +19,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (loaded && !user) router.replace("/");
-  }, [loaded, user, router]);
+    if (!loaded) return;
+    // Sin sesión → login
+    if (!authSession) { router.replace("/"); return; }
+    // Sesión pero sin perfil → completar onboarding
+    if (!user) { router.replace("/"); return; }
+  }, [loaded, user, authSession, router]);
 
   if (!loaded || !user) return <div className="bg-atlas-bg min-h-screen" />;
 

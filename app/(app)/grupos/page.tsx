@@ -5,6 +5,7 @@ import { AppHeader } from "@/components/app-header";
 import { WC_GROUPS } from "@/lib/data";
 import { TeamFlag } from "@/components/flags/TeamFlag";
 import { useGroups } from "@/hooks/use-groups";
+import { useUser } from "@/hooks/use-user";
 import type { AtlasGroup } from "@/lib/types";
 
 const WC_GROUP_IDS = Object.keys(WC_GROUPS);
@@ -18,6 +19,7 @@ function shareGroup(group: AtlasGroup) {
 
 export default function GruposPage() {
   const { groups, loading, createGroup, joinGroup } = useGroups();
+  const { user } = useUser();
   const [activeGroup, setActiveGroup] = useState(0);
   const [activeWC, setActiveWC] = useState("A");
 
@@ -38,18 +40,18 @@ export default function GruposPage() {
   const current = groups[activeGroup] ?? null;
 
   async function handleCreate() {
-    if (!newName.trim()) return;
+    if (!newName.trim() || !user) return;
     setCreating(true);
-    const g = await createGroup(newName.trim());
+    const g = await createGroup(newName.trim(), user.username, user.avatar);
     setCreating(false);
     if (g) { setCreated(g); setNewName(""); }
   }
 
   async function handleJoin() {
-    if (!joinCode.trim()) return;
+    if (!joinCode.trim() || !user) return;
     setJoining(true);
     setJoinError("");
-    const result = await joinGroup(joinCode.trim());
+    const result = await joinGroup(joinCode.trim(), user.username, user.avatar);
     setJoining(false);
     if (typeof result === 'string') { setJoinError(result); return; }
     setJoinCode("");

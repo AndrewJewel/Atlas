@@ -1,32 +1,8 @@
-import type { User } from "./types";
+// DEPRECATED — reemplazado por Supabase Auth.
+// Mantenido solo para no romper imports durante la transición.
+// Eliminar este archivo cuando todos los callers estén migrados.
 
-const KEY = "atlas_user";
-const ID_KEY = "atlas_user_id";
-
-export function getUserId(): string {
-  if (typeof window === "undefined") return "";
-  let id = localStorage.getItem(ID_KEY);
-  if (!id) {
-    id = crypto.randomUUID();
-    localStorage.setItem(ID_KEY, id);
-  }
-  return id;
-}
-
-export function getUser(): User | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = localStorage.getItem(KEY);
-    return raw ? (JSON.parse(raw) as User) : null;
-  } catch {
-    return null;
-  }
-}
-
-export function saveUser(user: User): void {
-  localStorage.setItem(KEY, JSON.stringify(user));
-}
-
-export function clearUser(): void {
-  localStorage.removeItem(KEY);
-}
+export function getUserId(): string { return ""; }
+export function getUser() { return null; }
+export function saveUser(_user: unknown): void {}
+export function clearUser(): void {}

@@ -1,17 +1,23 @@
-'use client';
-import { useState, useEffect, useCallback } from 'react';
-import { getUserId, getUser } from '@/lib/user-store';
-import type { AtlasGroup } from '@/lib/types';
+"use client";
+import { useState, useEffect, useCallback } from "react";
+import { supabase } from "@/lib/supabase";
+import type { AtlasGroup } from "@/lib/types";
+
+async function authHeaders(): Promise<Record<string, string>> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) return {};
+  return { Authorization: `Bearer ${session.access_token}` };
+}
 
 export function useGroups() {
   const [groups, setGroups] = useState<AtlasGroup[]>([]);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
-    const uid = getUserId();
-    if (!uid) { setLoading(false); return; }
+    const headers = await authHeaders();
+    if (!headers.Authorization) { setLoading(false); return; }
     try {
-      const res = await fetch('/api/groups', { headers: { 'x-user-id': uid } });
+      const res = await fetch("/api/groups", { headers });
       const { groups } = await res.json();
       setGroups(groups ?? []);
     } catch {}
@@ -20,33 +26,31 @@ export function useGroups() {
 
   useEffect(() => { load(); }, [load]);
 
-  async function createGroup(name: string): Promise<AtlasGroup | null> {
-    const uid = getUserId();
-    const user = getUser();
-    if (!uid || !user) return null;
-    const res = await fetch('/api/groups', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-user-id': uid },
-      body: JSON.stringify({ name, username: user.username, avatar: user.avatar }),
+  async function createGroup(name: string, username: string, avatar: object): Promise<AtlasGroup | null> {
+    const headers = await authHeaders();
+    if (!headers.Authorization) return null;
+    const res = await fetch("/api/groups", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...headers },
+      body: JSON.stringify({ name, username, avatar }),
     });
     const { group, error } = await res.json();
     if (error || !group) return null;
-    setGroups(p => [group, ...p]);
+    setGroups((p) => [group, ...p]);
     return group;
   }
 
-  async function joinGroup(code: string): Promise<AtlasGroup | string | null> {
-    const uid = getUserId();
-    const user = getUser();
-    if (!uid) return null;
-    const res = await fetch('/api/groups/join', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-user-id': uid },
-      body: JSON.stringify({ code, username: user?.username, avatar: user?.avatar }),
+  async function joinGroup(code: string, username: string, avatar: object): Promise<AtlasGroup | string | null> {
+    const headers = await authHeaders();
+    if (!headers.Authorization) return null;
+    const res = await fetch("/api/groups/join", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...headers },
+      body: JSON.stringify({ code, username, avatar }),
     });
     const { group, error } = await res.json();
     if (error) return error as string;
-    if (group) setGroups(p => p.find(g => g.id === group.id) ? p : [group, ...p]);
+    if (group) setGroups((p) => (p.find((g) => g.id === group.id) ? p : [group, ...p]));
     return group ?? null;
   }
 

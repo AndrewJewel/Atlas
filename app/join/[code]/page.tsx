@@ -1,21 +1,14 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { getUserId, getUser, saveUser } from "@/lib/user-store";
+import { useUser } from "@/hooks/use-user";
+import { supabase } from "@/lib/supabase";
 import type { AtlasGroup } from "@/lib/types";
-
-const AVATARS = [
-  { emoji: "⭐", bg: "#F97316" },
-  { emoji: "🦁", bg: "#EF4444" },
-  { emoji: "🌟", bg: "#3B82F6" },
-  { emoji: "⚡", bg: "#8B5CF6" },
-  { emoji: "🔥", bg: "#F59E0B" },
-  { emoji: "🎯", bg: "#22C55E" },
-];
 
 export default function JoinPage() {
   const router = useRouter();
   const { code } = useParams<{ code: string }>();
+  const { user, authSession, loaded } = useUser();
 
   const [group, setGroup] = useState<AtlasGroup | null>(null);
   const [loadError, setLoadError] = useState("");
@@ -23,14 +16,11 @@ export default function JoinPage() {
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState("");
 
-  const existingUser = getUser();
-  const [name, setName] = useState("");
-  const [avatarIdx, setAvatarIdx] = useState(0);
-
+  // Cargar preview del grupo (no requiere auth)
   useEffect(() => {
     fetch(`/api/groups?code=${encodeURIComponent(code)}`)
-      .then(r => r.json())
-      .then(d => {
+      .then((r) => r.json())
+      .then((d) => {
         if (d.error) setLoadError(d.error);
         else setGroup(d.group);
       })
@@ -39,20 +29,21 @@ export default function JoinPage() {
   }, [code]);
 
   async function handleJoin() {
+    if (!user || !authSession) {
+      router.push(`/?redirect=/join/${code}`);
+      return;
+    }
     setJoining(true);
     setJoinError("");
 
-    let user = getUser();
-    if (!user && name.trim()) {
-      user = { username: name.trim(), avatar: AVATARS[avatarIdx] };
-      saveUser(user);
-    }
-
-    const uid = getUserId();
+    const { data: { session } } = await supabase.auth.getSession();
     const res = await fetch("/api/groups/join", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "x-user-id": uid },
-      body: JSON.stringify({ code, username: user?.username, avatar: user?.avatar }),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session?.access_token ?? ""}`,
+      },
+      body: JSON.stringify({ code, username: user.username, avatar: user.avatar }),
     });
     const { error } = await res.json();
     setJoining(false);
@@ -60,9 +51,7 @@ export default function JoinPage() {
     router.push("/grupos");
   }
 
-  const canJoin = existingUser || name.trim().length > 0;
-
-  if (loading) {
+  if (loading || !loaded) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: "#090B19" }}>
         <div className="w-8 h-8 rounded-full border-2 border-orange-500 border-t-transparent animate-spin" />
@@ -101,10 +90,10 @@ export default function JoinPage() {
             {group?.name}
           </h1>
           <p className="text-[13px] text-gray-500">
-            {group?.members?.length ?? 0} {group?.members?.length === 1 ? "miembro" : "miembros"} · {code}
+            {group?.members?.length ?? 0}{" "}
+            {group?.members?.length === 1 ? "miembro" : "miembros"} · {code}
           </p>
 
-          {/* Member avatars */}
           {(group?.members?.length ?? 0) > 0 && (
             <div className="flex justify-center gap-2 mt-4">
               {group!.members.slice(0, 5).map((m, i) => (
@@ -129,56 +118,30 @@ export default function JoinPage() {
           )}
         </div>
 
-        {/* Existing user → just confirm */}
-        {existingUser ? (
+        {/* Perfil del usuario autenticado */}
+        {user ? (
           <div
             className="flex items-center gap-3 p-3.5 rounded-2xl mb-5"
             style={{ background: "#1A1F38", border: "1px solid rgba(255,255,255,0.08)" }}
           >
             <div
               className="w-11 h-11 rounded-xl flex items-center justify-center text-[22px] flex-shrink-0"
-              style={{ background: existingUser.avatar.bg }}
+              style={{ background: user.avatar.bg }}
             >
-              {existingUser.avatar.emoji}
+              {user.avatar.emoji}
             </div>
             <div>
-              <p className="text-[14px] font-semibold text-white">{existingUser.username}</p>
+              <p className="text-[14px] font-semibold text-white">{user.username}</p>
               <p className="text-[12px] text-gray-500">Te vas a unir con este perfil</p>
             </div>
           </div>
         ) : (
-          /* New user → quick profile setup */
-          <div className="mb-5">
-            <label className="block text-[11px] font-bold text-gray-400 mb-2 tracking-widest uppercase">
-              ¿Cómo te llamás?
-            </label>
-            <input
-              autoFocus
-              value={name}
-              onChange={e => setName(e.target.value)}
-              placeholder="Tu nombre o apodo"
-              className="w-full px-4 py-3 rounded-xl text-white text-[16px] outline-none mb-4"
-              style={{ background: "#1A1F38", border: "1px solid rgba(255,255,255,0.1)" }}
-            />
-            <label className="block text-[11px] font-bold text-gray-400 mb-2 tracking-widest uppercase">
-              Elegí tu avatar
-            </label>
-            <div className="flex gap-2 flex-wrap">
-              {AVATARS.map((av, i) => (
-                <button
-                  key={i}
-                  onClick={() => setAvatarIdx(i)}
-                  className="w-11 h-11 rounded-xl flex items-center justify-center text-[22px] transition-all"
-                  style={{
-                    background: av.bg,
-                    outline: avatarIdx === i ? "2.5px solid #F97316" : "none",
-                    outlineOffset: 2,
-                  }}
-                >
-                  {av.emoji}
-                </button>
-              ))}
-            </div>
+          <div
+            className="p-4 rounded-2xl mb-5 text-center"
+            style={{ background: "#1A1F38", border: "1px solid rgba(249,115,22,0.2)" }}
+          >
+            <p className="text-[14px] text-atlas-primary font-semibold mb-1">Debes tener cuenta en Atlas</p>
+            <p className="text-[12px] text-gray-400">Crear tu cuenta tarda 30 segundos.</p>
           </div>
         )}
 
@@ -188,16 +151,20 @@ export default function JoinPage() {
 
         <button
           onClick={handleJoin}
-          disabled={!canJoin || joining}
+          disabled={joining}
           className="w-full py-4 rounded-xl text-white text-[17px] font-black"
           style={{
-            background: canJoin ? "#F97316" : "#374151",
+            background: "#F97316",
             fontFamily: "'Barlow Condensed',sans-serif",
             opacity: joining ? 0.7 : 1,
             letterSpacing: "0.04em",
           }}
         >
-          {joining ? "Uniéndome..." : `Unirme a ${group?.name}`}
+          {joining
+            ? "Uniéndome..."
+            : user
+            ? `Unirme a ${group?.name}`
+            : "Crear cuenta para unirme"}
         </button>
       </div>
     </div>

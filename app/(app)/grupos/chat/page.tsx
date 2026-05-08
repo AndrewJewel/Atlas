@@ -3,7 +3,6 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useUser } from "@/hooks/use-user";
 import { supabase } from "@/lib/supabase";
-import { getUserId } from "@/lib/user-store";
 import type { Message, Avatar } from "@/lib/types";
 
 const GROUP_ID = "global";
@@ -37,7 +36,8 @@ export default function ChatPage() {
   const [atlasTyping, setAtlasTyping] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
-  const myId = getUserId();
+  // user.id = auth.uid() — garantizado por el layout
+  const myId = user?.id ?? "";
 
   const scrollDown = () => {
     if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;

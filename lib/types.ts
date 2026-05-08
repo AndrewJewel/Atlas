@@ -4,6 +4,7 @@ export interface Avatar {
 }
 
 export interface User {
+  id: string;        // auth.uid() — nunca generado en cliente
   username: string;
   avatar: Avatar;
   team?: Team;
