@@ -20,6 +20,10 @@ export const metadata: Metadata = {
   title: "Atlas — Mundial 2026",
   description: "Chat · Polla · Álbum Panini · Atlas IA. El Mundial en tu grupo.",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/atlas-favicon.svg",
+    apple: "/atlas-icon-night.svg",
+  },
 };
 
 export const viewport: Viewport = {

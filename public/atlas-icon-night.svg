@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" rx="112" fill="#090B19"/>
+  <!-- Outer glow ring -->
+  <circle cx="256" cy="210" r="168" stroke="#F97316" stroke-width="6" fill="none" opacity="0.18"/>
+  <!-- Main outer ring -->
+  <circle cx="256" cy="210" r="148" stroke="#F97316" stroke-width="32" fill="none"/>
+  <!-- Inner ring -->
+  <circle cx="256" cy="210" r="72" stroke="#F97316" stroke-width="20" fill="none" opacity="0.55"/>
+  <!-- Center dot -->
+  <circle cx="256" cy="210" r="30" fill="#F97316"/>
+  <!-- ATLAS wordmark -->
+  <text
+    x="256" y="424"
+    text-anchor="middle"
+    font-family="'Arial Black','Arial',system-ui,sans-serif"
+    font-weight="900"
+    font-size="78"
+    letter-spacing="14"
+    fill="#EDF0FF"
+  >ATLAS</text>
+  <!-- Accent dot after wordmark -->
+  <circle cx="393" cy="403" r="8" fill="#F97316"/>
+</svg>
