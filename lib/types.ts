@@ -49,6 +49,23 @@ export interface Champion {
   score: string;
 }
 
+export interface GroupMember {
+  id: string;
+  user_id: string;
+  username: string;
+  avatar: Avatar;
+  joined_at: string;
+}
+
+export interface AtlasGroup {
+  id: string;
+  name: string;
+  code: string;
+  created_by: string;
+  created_at: string;
+  members: GroupMember[];
+}
+
 export type PredictionResult = "home" | "away" | "draw" | null;
 
 export interface Prediction {
