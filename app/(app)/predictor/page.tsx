@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { AppHeader } from "@/components/app-header";
 import { MATCHES } from "@/lib/data";
+import { TeamFlag } from "@/components/flags/TeamFlag";
 import { useUser } from "@/hooks/use-user";
 import type { PredictionResult } from "@/lib/types";
 
@@ -134,7 +135,7 @@ export default function PredictorPage() {
                         border: `2px solid ${pred === "home" ? "#F97316" : "rgba(255,255,255,0.08)"}`,
                       }}
                     >
-                      <span className="text-[36px]">{m.home.flag}</span>
+                      <TeamFlag code={m.home.code} size="sm" shape="rounded" />
                       <span className="text-[12px] font-semibold text-atlas-text text-center leading-tight">{m.home.name}</span>
                     </button>
 
@@ -168,7 +169,7 @@ export default function PredictorPage() {
                         border: `2px solid ${pred === "away" ? "#F97316" : "rgba(255,255,255,0.08)"}`,
                       }}
                     >
-                      <span className="text-[36px]">{m.away.flag}</span>
+                      <TeamFlag code={m.away.code} size="sm" shape="rounded" />
                       <span className="text-[12px] font-semibold text-atlas-text text-center leading-tight">{m.away.name}</span>
                     </button>
                   </div>

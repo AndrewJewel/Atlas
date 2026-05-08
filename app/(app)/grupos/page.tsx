@@ -3,6 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { AppHeader } from "@/components/app-header";
 import { WC_GROUPS } from "@/lib/data";
+import { TeamFlag } from "@/components/flags/TeamFlag";
 
 const GROUP_IDS = Object.keys(WC_GROUPS);
 
@@ -127,7 +128,7 @@ export default function GruposPage() {
             >
               <span className="text-[12px] font-bold text-atlas-dimmed text-center">{i + 1}</span>
               <div className="flex items-center gap-1.5">
-                <span className="text-[18px]">{team.flag}</span>
+                <TeamFlag code={team.code} size="xs" shape="rounded" />
                 <span className="text-[13px] font-medium text-atlas-text truncate">{team.name}</span>
               </div>
               {[team.pj, team.g, team.e, team.p, team.gf, team.gc, team.dg].map((v, j) => (

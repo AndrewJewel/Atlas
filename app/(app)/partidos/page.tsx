@@ -4,6 +4,7 @@ import { AppHeader } from "@/components/app-header";
 import { useCountdown } from "@/hooks/use-countdown";
 import { useLiveScores } from "@/hooks/use-live-scores";
 import { MATCHES, MATCH_DAYS, KICKOFF } from "@/lib/data";
+import { TeamFlag } from "@/components/flags/TeamFlag";
 
 // All WC 2026 matches are scheduled in EDT (UTC-4).
 function toLocalKickoff(date: string, etTime: string): { time: string; dayShifted: boolean } {
@@ -156,7 +157,7 @@ export default function PartidosPage() {
               {/* Teams + Score */}
               <div className="px-4 pb-3.5 pt-2">
                 <div className="flex items-center gap-2.5 mb-1.5">
-                  <span className="text-[22px]">{m.home.flag}</span>
+                  <TeamFlag code={m.home.code} size="xs" shape="rounded" />
                   <span className="flex-1 text-[15px] font-medium text-atlas-text">{m.home.name}</span>
                   {hasScore && (
                     <span
@@ -168,7 +169,7 @@ export default function PartidosPage() {
                   )}
                 </div>
                 <div className="flex items-center gap-2.5 mb-2.5">
-                  <span className="text-[22px]">{m.away.flag}</span>
+                  <TeamFlag code={m.away.code} size="xs" shape="rounded" />
                   <span className="flex-1 text-[15px] font-medium text-atlas-text">{m.away.name}</span>
                   {hasScore && (
                     <span
