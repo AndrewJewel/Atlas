@@ -6,6 +6,30 @@ import { useLiveScores } from "@/hooks/use-live-scores";
 import { MATCHES, MATCH_DAYS, KICKOFF } from "@/lib/data";
 import { TeamFlag } from "@/components/flags/TeamFlag";
 
+function BellIcon({ active, cardBg }: { active: boolean; cardBg: string }) {
+  const stroke = active ? "#F97316" : "rgba(255,255,255,0.22)";
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+      <path
+        d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"
+        fill={active ? "#F97316" : cardBg}
+        stroke={stroke}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M13.73 21a2 2 0 0 1-3.46 0"
+        fill="none"
+        stroke={stroke}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 // All WC 2026 matches are scheduled in EDT (UTC-4).
 function toLocalKickoff(date: string, etTime: string): { time: string; dayShifted: boolean } {
   const [y, mo, d] = date.split("-").map(Number);
@@ -146,10 +170,12 @@ export default function PartidosPage() {
                   )}
                   <button
                     onClick={(e) => toggleNotify(m.id, e)}
-                    className="text-[14px]"
-                    style={{ color: notified[m.id] ? "#F97316" : "#4A5178" }}
+                    className="flex items-center justify-center w-7 h-7 rounded-full transition-all"
+                    style={{
+                      background: notified[m.id] ? "rgba(249,115,22,0.15)" : "transparent",
+                    }}
                   >
-                    {notified[m.id] ? "🔔" : "🔕"}
+                    <BellIcon active={!!notified[m.id]} cardBg={isLive ? "#1A1228" : "#0F1228"} />
                   </button>
                 </div>
               </div>
