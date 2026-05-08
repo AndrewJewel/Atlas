@@ -5,11 +5,22 @@ import { useCountdown } from "@/hooks/use-countdown";
 import { useLiveScores } from "@/hooks/use-live-scores";
 import { MATCHES, MATCH_DAYS, KICKOFF } from "@/lib/data";
 
+// All WC 2026 matches are scheduled in EDT (UTC-4).
+function toLocalKickoff(date: string, etTime: string): { time: string; dayShifted: boolean } {
+  const [y, mo, d] = date.split("-").map(Number);
+  const [h, mi] = etTime.split(":").map(Number);
+  const utc = new Date(Date.UTC(y, mo - 1, d, h + 4, mi));
+  const time = utc.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+  const localDate = `${utc.getFullYear()}-${String(utc.getMonth() + 1).padStart(2, "0")}-${String(utc.getDate()).padStart(2, "0")}`;
+  return { time, dayShifted: localDate !== date };
+}
+
 function groupLabel(group: string) {
-  if (group === "R32")  return "Octavos de final";
-  if (group === "QF")   return "Cuartos de final";
-  if (group === "SF")   return "Semifinal";
-  if (group === "3P")   return "3er y 4to puesto";
+  if (group === "R32")   return "Ronda de 32";
+  if (group === "R16")   return "Octavos de final";
+  if (group === "QF")    return "Cuartos de final";
+  if (group === "SF")    return "Semifinal";
+  if (group === "3P")    return "3er y 4to puesto";
   if (group === "FINAL") return "🏆 Final";
   return `Grupo ${group}`;
 }
@@ -171,11 +182,20 @@ export default function PartidosPage() {
 
                 {/* Footer */}
                 <div className="flex flex-col gap-0.5 pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                  {!hasScore && (
-                    <span className="text-[15px] font-bold text-atlas-text" style={{ fontFamily: "var(--font-display)" }}>
-                      {m.time} hrs
-                    </span>
-                  )}
+                  {!hasScore && (() => {
+                    const { time, dayShifted } = toLocalKickoff(m.date, m.time);
+                    return (
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-[15px] font-bold text-atlas-text" style={{ fontFamily: "var(--font-display)" }}>
+                          {time}
+                        </span>
+                        {dayShifted && (
+                          <span className="text-[10px] font-bold" style={{ color: "#F97316" }}>+1</span>
+                        )}
+                        <span className="text-[11px] text-atlas-dimmed">hora local</span>
+                      </div>
+                    );
+                  })()}
                   <span className="text-[12px] text-atlas-dimmed">{m.venue}</span>
                   <span className="text-[12px] text-atlas-dimmed">{m.city}</span>
                 </div>

@@ -66,7 +66,7 @@ const TBD = { name: "Por definir", flag: "⬜", code: "TBD" };
 export const MATCHES: Match[] = [
   // ── JORNADA 1 ──────────────────────────────────────────────────────────────
   // Jun 11 — Grupo A
-  { id:  1, group: "A", num:  1, date: "2026-06-11", time: "13:00", home: { name: "México",              flag: "🇲🇽", code: "MEX" }, away: { name: "Sudáfrica",          flag: "🇿🇦", code: "RSA" }, venue: "Estadio Ciudad de México", city: "Cd. de México" },
+  { id:  1, group: "A", num:  1, date: "2026-06-11", time: "15:00", home: { name: "México",              flag: "🇲🇽", code: "MEX" }, away: { name: "Sudáfrica",          flag: "🇿🇦", code: "RSA" }, venue: "Estadio Ciudad de México", city: "Cd. de México" },
   { id:  2, group: "A", num:  2, date: "2026-06-11", time: "22:00", home: { name: "Corea del Sur",       flag: "🇰🇷", code: "KOR" }, away: { name: "Chequia",            flag: "🇨🇿", code: "CZE" }, venue: "Estadio Akron",            city: "Guadalajara"   },
   // Jun 12 — Grupos B y D
   { id:  3, group: "B", num:  3, date: "2026-06-12", time: "15:00", home: { name: "Canadá",              flag: "🇨🇦", code: "CAN" }, away: { name: "Bosnia y Herzegovina",flag: "🇧🇦", code: "BIH" }, venue: "BMO Field",                city: "Toronto"       },
@@ -82,7 +82,7 @@ export const MATCHES: Match[] = [
   { id: 11, group: "F", num: 11, date: "2026-06-14", time: "16:00", home: { name: "Países Bajos",        flag: "🇳🇱", code: "NED" }, away: { name: "Japón",              flag: "🇯🇵", code: "JPN" }, venue: "AT&T Stadium",             city: "Dallas"        },
   { id: 12, group: "F", num: 12, date: "2026-06-14", time: "22:00", home: { name: "Suecia",              flag: "🇸🇪", code: "SWE" }, away: { name: "Túnez",              flag: "🇹🇳", code: "TUN" }, venue: "Estadio BBVA",             city: "Monterrey"     },
   // Jun 15 — Grupos G y H
-  { id: 13, group: "G", num: 13, date: "2026-06-15", time: "15:00", home: { name: "Bélgica",             flag: "🇧🇪", code: "BEL" }, away: { name: "Egipto",             flag: "🇪🇬", code: "EGY" }, venue: "BC Place",                 city: "Vancouver"     },
+  { id: 13, group: "G", num: 13, date: "2026-06-15", time: "15:00", home: { name: "Bélgica",             flag: "🇧🇪", code: "BEL" }, away: { name: "Egipto",             flag: "🇪🇬", code: "EGY" }, venue: "Lumen Field",              city: "Seattle"       },
   { id: 14, group: "G", num: 14, date: "2026-06-15", time: "21:00", home: { name: "Irán",                flag: "🇮🇷", code: "IRN" }, away: { name: "Nueva Zelanda",      flag: "🇳🇿", code: "NZL" }, venue: "SoFi Stadium",             city: "Los Ángeles"   },
   { id: 15, group: "H", num: 15, date: "2026-06-15", time: "12:00", home: { name: "España",              flag: "🇪🇸", code: "ESP" }, away: { name: "Cabo Verde",         flag: "🇨🇻", code: "CPV" }, venue: "Mercedes-Benz Stadium",    city: "Atlanta"       },
   { id: 16, group: "H", num: 16, date: "2026-06-15", time: "18:00", home: { name: "Arabia Saudita",      flag: "🇸🇦", code: "KSA" }, away: { name: "Uruguay",            flag: "🇺🇾", code: "URU" }, venue: "Hard Rock Stadium",        city: "Miami"         },
@@ -109,10 +109,10 @@ export const MATCHES: Match[] = [
   { id: 31, group: "D", num: 31, date: "2026-06-19", time: "15:00", home: { name: "Estados Unidos",      flag: "🇺🇸", code: "USA" }, away: { name: "Australia",          flag: "🇦🇺", code: "AUS" }, venue: "Lumen Field",              city: "Seattle"       },
   { id: 32, group: "D", num: 32, date: "2026-06-20", time: "00:00", home: { name: "Turquía",             flag: "🇹🇷", code: "TUR" }, away: { name: "Paraguay",           flag: "🇵🇾", code: "PAR" }, venue: "Levi's Stadium",           city: "Santa Clara"   },
   // Jun 20 — Grupos E y F
-  { id: 33, group: "E", num: 33, date: "2026-06-20", time: "13:00", home: { name: "Alemania",            flag: "🇩🇪", code: "GER" }, away: { name: "Costa de Marfil",    flag: "🇨🇮", code: "CIV" }, venue: "BMO Field",                city: "Toronto"       },
-  { id: 34, group: "E", num: 34, date: "2026-06-20", time: "20:00", home: { name: "Ecuador",             flag: "🇪🇨", code: "ECU" }, away: { name: "Curazao",            flag: "🇨🇼", code: "CUW" }, venue: "Arrowhead Stadium",        city: "Kansas City"   },
+  { id: 33, group: "E", num: 33, date: "2026-06-20", time: "16:00", home: { name: "Alemania",            flag: "🇩🇪", code: "GER" }, away: { name: "Costa de Marfil",    flag: "🇨🇮", code: "CIV" }, venue: "BMO Field",                city: "Toronto"       },
+  { id: 34, group: "E", num: 34, date: "2026-06-20", time: "22:00", home: { name: "Ecuador",             flag: "🇪🇨", code: "ECU" }, away: { name: "Curazao",            flag: "🇨🇼", code: "CUW" }, venue: "Arrowhead Stadium",        city: "Kansas City"   },
   { id: 35, group: "F", num: 35, date: "2026-06-20", time: "13:00", home: { name: "Países Bajos",        flag: "🇳🇱", code: "NED" }, away: { name: "Suecia",             flag: "🇸🇪", code: "SWE" }, venue: "NRG Stadium",              city: "Houston"       },
-  { id: 36, group: "F", num: 36, date: "2026-06-20", time: "00:00", home: { name: "Túnez",               flag: "🇹🇳", code: "TUN" }, away: { name: "Japón",              flag: "🇯🇵", code: "JPN" }, venue: "Estadio BBVA",             city: "Monterrey"     },
+  { id: 36, group: "F", num: 36, date: "2026-06-21", time: "00:00", home: { name: "Túnez",               flag: "🇹🇳", code: "TUN" }, away: { name: "Japón",              flag: "🇯🇵", code: "JPN" }, venue: "Estadio BBVA",             city: "Monterrey"     },
   // Jun 21 — Grupos G y H
   { id: 37, group: "G", num: 37, date: "2026-06-21", time: "15:00", home: { name: "Bélgica",             flag: "🇧🇪", code: "BEL" }, away: { name: "Irán",               flag: "🇮🇷", code: "IRN" }, venue: "SoFi Stadium",             city: "Los Ángeles"   },
   { id: 38, group: "G", num: 38, date: "2026-06-21", time: "21:00", home: { name: "Nueva Zelanda",       flag: "🇳🇿", code: "NZL" }, away: { name: "Egipto",             flag: "🇪🇬", code: "EGY" }, venue: "BC Place",                 city: "Vancouver"     },
@@ -161,39 +161,59 @@ export const MATCHES: Match[] = [
   { id: 71, group: "L", num: 71, date: "2026-06-27", time: "17:00", home: { name: "Panamá",              flag: "🇵🇦", code: "PAN" }, away: { name: "Inglaterra",         flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", code: "ENG" }, venue: "MetLife Stadium",          city: "Nueva York"    },
   { id: 72, group: "L", num: 72, date: "2026-06-27", time: "17:00", home: { name: "Croacia",             flag: "🇭🇷", code: "CRO" }, away: { name: "Ghana",              flag: "🇬🇭", code: "GHA" }, venue: "Lincoln Financial Field",  city: "Filadelfia"    },
 
+  // ── RONDA DE 32 ────────────────────────────────────────────────────────────
+  // Jun 28
+  { id:  73, group: "R32", num:  73, date: "2026-06-28", time: "20:00", home: TBD, away: TBD, venue: "SoFi Stadium",             city: "Los Ángeles"   },
+  // Jun 29
+  { id:  74, group: "R32", num:  74, date: "2026-06-29", time: "14:00", home: TBD, away: TBD, venue: "Gillette Stadium",         city: "Boston"        },
+  { id:  75, group: "R32", num:  75, date: "2026-06-29", time: "18:00", home: TBD, away: TBD, venue: "Estadio BBVA",             city: "Monterrey"     },
+  { id:  76, group: "R32", num:  76, date: "2026-06-29", time: "22:00", home: TBD, away: TBD, venue: "NRG Stadium",              city: "Houston"       },
+  // Jun 30
+  { id:  77, group: "R32", num:  77, date: "2026-06-30", time: "14:00", home: TBD, away: TBD, venue: "MetLife Stadium",          city: "Nueva York"    },
+  { id:  78, group: "R32", num:  78, date: "2026-06-30", time: "18:00", home: TBD, away: TBD, venue: "AT&T Stadium",             city: "Dallas"        },
+  { id:  79, group: "R32", num:  79, date: "2026-06-30", time: "22:00", home: TBD, away: TBD, venue: "Estadio Ciudad de México", city: "Cd. de México" },
+  // Jul 1
+  { id:  80, group: "R32", num:  80, date: "2026-07-01", time: "14:00", home: TBD, away: TBD, venue: "Mercedes-Benz Stadium",    city: "Atlanta"       },
+  { id:  81, group: "R32", num:  81, date: "2026-07-01", time: "18:00", home: TBD, away: TBD, venue: "Levi's Stadium",           city: "Santa Clara"   },
+  { id:  82, group: "R32", num:  82, date: "2026-07-01", time: "22:00", home: TBD, away: TBD, venue: "Lumen Field",              city: "Seattle"       },
+  // Jul 2
+  { id:  83, group: "R32", num:  83, date: "2026-07-02", time: "14:00", home: TBD, away: TBD, venue: "BMO Field",                city: "Toronto"       },
+  { id:  84, group: "R32", num:  84, date: "2026-07-02", time: "18:00", home: TBD, away: TBD, venue: "SoFi Stadium",             city: "Los Ángeles"   },
+  { id:  85, group: "R32", num:  85, date: "2026-07-02", time: "22:00", home: TBD, away: TBD, venue: "BC Place",                 city: "Vancouver"     },
+  // Jul 3
+  { id:  86, group: "R32", num:  86, date: "2026-07-03", time: "14:00", home: TBD, away: TBD, venue: "Hard Rock Stadium",        city: "Miami"         },
+  { id:  87, group: "R32", num:  87, date: "2026-07-03", time: "18:00", home: TBD, away: TBD, venue: "Arrowhead Stadium",        city: "Kansas City"   },
+  { id:  88, group: "R32", num:  88, date: "2026-07-03", time: "22:00", home: TBD, away: TBD, venue: "AT&T Stadium",             city: "Dallas"        },
+
   // ── OCTAVOS DE FINAL ───────────────────────────────────────────────────────
-  { id: 73,  group: "R32", num: 73,  date: "2026-07-01", time: "13:00", home: TBD, away: TBD, venue: "MetLife Stadium",          city: "Nueva York"    },
-  { id: 74,  group: "R32", num: 74,  date: "2026-07-01", time: "20:00", home: TBD, away: TBD, venue: "SoFi Stadium",             city: "Los Ángeles"   },
-  { id: 75,  group: "R32", num: 75,  date: "2026-07-02", time: "13:00", home: TBD, away: TBD, venue: "AT&T Stadium",             city: "Dallas"        },
-  { id: 76,  group: "R32", num: 76,  date: "2026-07-02", time: "20:00", home: TBD, away: TBD, venue: "Estadio Akron",            city: "Guadalajara"   },
-  { id: 77,  group: "R32", num: 77,  date: "2026-07-03", time: "13:00", home: TBD, away: TBD, venue: "Gillette Stadium",         city: "Boston"        },
-  { id: 78,  group: "R32", num: 78,  date: "2026-07-03", time: "20:00", home: TBD, away: TBD, venue: "BC Place",                 city: "Vancouver"     },
-  { id: 79,  group: "R32", num: 79,  date: "2026-07-04", time: "13:00", home: TBD, away: TBD, venue: "Levi's Stadium",           city: "Santa Clara"   },
-  { id: 80,  group: "R32", num: 80,  date: "2026-07-04", time: "20:00", home: TBD, away: TBD, venue: "NRG Stadium",              city: "Houston"       },
-  { id: 81,  group: "R32", num: 81,  date: "2026-07-05", time: "13:00", home: TBD, away: TBD, venue: "Arrowhead Stadium",        city: "Kansas City"   },
-  { id: 82,  group: "R32", num: 82,  date: "2026-07-05", time: "20:00", home: TBD, away: TBD, venue: "Hard Rock Stadium",        city: "Miami"         },
-  { id: 83,  group: "R32", num: 83,  date: "2026-07-06", time: "13:00", home: TBD, away: TBD, venue: "Estadio Ciudad de México", city: "Cd. de México" },
-  { id: 84,  group: "R32", num: 84,  date: "2026-07-06", time: "20:00", home: TBD, away: TBD, venue: "Lumen Field",              city: "Seattle"       },
-  { id: 85,  group: "R32", num: 85,  date: "2026-07-07", time: "13:00", home: TBD, away: TBD, venue: "BMO Field",                city: "Toronto"       },
-  { id: 86,  group: "R32", num: 86,  date: "2026-07-07", time: "20:00", home: TBD, away: TBD, venue: "MetLife Stadium",          city: "Nueva York"    },
-  { id: 87,  group: "R32", num: 87,  date: "2026-07-08", time: "13:00", home: TBD, away: TBD, venue: "AT&T Stadium",             city: "Dallas"        },
-  { id: 88,  group: "R32", num: 88,  date: "2026-07-08", time: "20:00", home: TBD, away: TBD, venue: "SoFi Stadium",             city: "Los Ángeles"   },
+  // Jul 4
+  { id:  89, group: "R16", num:  89, date: "2026-07-04", time: "15:00", home: TBD, away: TBD, venue: "Lincoln Financial Field",  city: "Filadelfia"    },
+  { id:  90, group: "R16", num:  90, date: "2026-07-04", time: "19:00", home: TBD, away: TBD, venue: "NRG Stadium",              city: "Houston"       },
+  // Jul 5
+  { id:  91, group: "R16", num:  91, date: "2026-07-05", time: "15:00", home: TBD, away: TBD, venue: "MetLife Stadium",          city: "Nueva York"    },
+  { id:  92, group: "R16", num:  92, date: "2026-07-05", time: "19:00", home: TBD, away: TBD, venue: "Estadio Ciudad de México", city: "Cd. de México" },
+  // Jul 6
+  { id:  93, group: "R16", num:  93, date: "2026-07-06", time: "15:00", home: TBD, away: TBD, venue: "AT&T Stadium",             city: "Dallas"        },
+  { id:  94, group: "R16", num:  94, date: "2026-07-06", time: "19:00", home: TBD, away: TBD, venue: "Lumen Field",              city: "Seattle"       },
+  // Jul 7
+  { id:  95, group: "R16", num:  95, date: "2026-07-07", time: "15:00", home: TBD, away: TBD, venue: "Mercedes-Benz Stadium",    city: "Atlanta"       },
+  { id:  96, group: "R16", num:  96, date: "2026-07-07", time: "19:00", home: TBD, away: TBD, venue: "BC Place",                 city: "Vancouver"     },
 
   // ── CUARTOS DE FINAL ───────────────────────────────────────────────────────
-  { id: 89,  group: "QF",  num: 89,  date: "2026-07-11", time: "13:00", home: TBD, away: TBD, venue: "MetLife Stadium",          city: "Nueva York"    },
-  { id: 90,  group: "QF",  num: 90,  date: "2026-07-11", time: "20:00", home: TBD, away: TBD, venue: "AT&T Stadium",             city: "Dallas"        },
-  { id: 91,  group: "QF",  num: 91,  date: "2026-07-12", time: "13:00", home: TBD, away: TBD, venue: "SoFi Stadium",             city: "Los Ángeles"   },
-  { id: 92,  group: "QF",  num: 92,  date: "2026-07-12", time: "20:00", home: TBD, away: TBD, venue: "Estadio Akron",            city: "Guadalajara"   },
+  { id:  97, group: "QF",  num:  97, date: "2026-07-09", time: "16:00", home: TBD, away: TBD, venue: "Gillette Stadium",         city: "Boston"        },
+  { id:  98, group: "QF",  num:  98, date: "2026-07-10", time: "16:00", home: TBD, away: TBD, venue: "SoFi Stadium",             city: "Los Ángeles"   },
+  { id:  99, group: "QF",  num:  99, date: "2026-07-11", time: "15:00", home: TBD, away: TBD, venue: "Hard Rock Stadium",        city: "Miami"         },
+  { id: 100, group: "QF",  num: 100, date: "2026-07-11", time: "19:00", home: TBD, away: TBD, venue: "Arrowhead Stadium",        city: "Kansas City"   },
 
   // ── SEMIFINALES ────────────────────────────────────────────────────────────
-  { id: 93,  group: "SF",  num: 93,  date: "2026-07-14", time: "20:00", home: TBD, away: TBD, venue: "MetLife Stadium",          city: "Nueva York"    },
-  { id: 94,  group: "SF",  num: 94,  date: "2026-07-15", time: "20:00", home: TBD, away: TBD, venue: "AT&T Stadium",             city: "Dallas"        },
+  { id: 101, group: "SF",  num: 101, date: "2026-07-14", time: "20:00", home: TBD, away: TBD, venue: "AT&T Stadium",             city: "Dallas"        },
+  { id: 102, group: "SF",  num: 102, date: "2026-07-15", time: "20:00", home: TBD, away: TBD, venue: "Mercedes-Benz Stadium",    city: "Atlanta"       },
 
   // ── TERCER PUESTO ──────────────────────────────────────────────────────────
-  { id: 95,  group: "3P",  num: 95,  date: "2026-07-18", time: "20:00", home: TBD, away: TBD, venue: "Estadio Akron",            city: "Guadalajara"   },
+  { id: 103, group: "3P",  num: 103, date: "2026-07-18", time: "16:00", home: TBD, away: TBD, venue: "Hard Rock Stadium",        city: "Miami"         },
 
   // ── FINAL ──────────────────────────────────────────────────────────────────
-  { id: 96,  group: "FINAL", num: 96, date: "2026-07-19", time: "20:00", home: TBD, away: TBD, venue: "MetLife Stadium",         city: "Nueva York"    },
+  { id: 104, group: "FINAL", num: 104, date: "2026-07-19", time: "16:00", home: TBD, away: TBD, venue: "MetLife Stadium",        city: "Nueva York"    },
 ];
 
 export const MATCH_DAYS = [
@@ -217,18 +237,22 @@ export const MATCH_DAYS = [
   { date: "2026-06-25", label: "25 Jun" },
   { date: "2026-06-26", label: "26 Jun" },
   { date: "2026-06-27", label: "27 Jun" },
-  // Octavos
+  // Ronda de 32
+  { date: "2026-06-28", label: "28 Jun" },
+  { date: "2026-06-29", label: "29 Jun" },
+  { date: "2026-06-30", label: "30 Jun" },
   { date: "2026-07-01", label: "1 Jul"  },
   { date: "2026-07-02", label: "2 Jul"  },
   { date: "2026-07-03", label: "3 Jul"  },
+  // Octavos de final
   { date: "2026-07-04", label: "4 Jul"  },
   { date: "2026-07-05", label: "5 Jul"  },
   { date: "2026-07-06", label: "6 Jul"  },
   { date: "2026-07-07", label: "7 Jul"  },
-  { date: "2026-07-08", label: "8 Jul"  },
-  // Cuartos
+  // Cuartos de final
+  { date: "2026-07-09", label: "9 Jul"  },
+  { date: "2026-07-10", label: "10 Jul" },
   { date: "2026-07-11", label: "11 Jul" },
-  { date: "2026-07-12", label: "12 Jul" },
   // Semis
   { date: "2026-07-14", label: "14 Jul" },
   { date: "2026-07-15", label: "15 Jul" },
