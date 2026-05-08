@@ -1,24 +1,78 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- Background -->
-  <rect width="512" height="512" rx="112" fill="#090B19"/>
-  <!-- Outer glow ring -->
-  <circle cx="256" cy="210" r="168" stroke="#F97316" stroke-width="6" fill="none" opacity="0.18"/>
-  <!-- Main outer ring -->
-  <circle cx="256" cy="210" r="148" stroke="#F97316" stroke-width="32" fill="none"/>
-  <!-- Inner ring -->
-  <circle cx="256" cy="210" r="72" stroke="#F97316" stroke-width="20" fill="none" opacity="0.55"/>
-  <!-- Center dot -->
-  <circle cx="256" cy="210" r="30" fill="#F97316"/>
-  <!-- ATLAS wordmark -->
-  <text
-    x="256" y="424"
-    text-anchor="middle"
-    font-family="'Arial Black','Arial',system-ui,sans-serif"
-    font-weight="900"
-    font-size="78"
-    letter-spacing="14"
-    fill="#EDF0FF"
-  >ATLAS</text>
-  <!-- Accent dot after wordmark -->
-  <circle cx="393" cy="403" r="8" fill="#F97316"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <title>Atlas — App Icon</title>
+  <defs>
+    <clipPath id="ball-clip">
+      <circle cx="256" cy="248" r="220"></circle>
+    </clipPath>
+    <radialGradient id="ball-fill" cx="36%" cy="28%" r="70%">
+      <stop offset="0%" stop-color="#2D3250"></stop>
+      <stop offset="55%" stop-color="#1A1F38"></stop>
+      <stop offset="100%" stop-color="#0D0F1E"></stop>
+    </radialGradient>
+    <radialGradient id="ball-gloss" cx="32%" cy="20%" r="52%">
+      <stop offset="0%" stop-color="white" stop-opacity="0.28"></stop>
+      <stop offset="45%" stop-color="white" stop-opacity="0.04"></stop>
+      <stop offset="100%" stop-color="white" stop-opacity="0"></stop>
+    </radialGradient>
+    <radialGradient id="ball-rim" cx="50%" cy="50%" r="50%">
+      <stop offset="75%" stop-color="transparent"></stop>
+      <stop offset="100%" stop-color="rgba(0,0,0,0.5)"></stop>
+    </radialGradient>
+    <filter id="shadow-blur">
+      <feGaussianBlur stdDeviation="18"></feGaussianBlur>
+    </filter>
+  </defs>
+
+  
+  <rect width="512" height="512" rx="110" fill="#080A14"></rect>
+
+  
+  <ellipse cx="256" cy="295" rx="200" ry="28" fill="rgba(0,0,0,0.65)" filter="url(#shadow-blur)"></ellipse>
+
+  
+  <circle cx="256" cy="248" r="220" fill="url(#ball-fill)"></circle>
+
+  
+  <g clip-path="url(#ball-clip)">
+
+    
+    <polygon points="256,154 340,212 309,311 203,311 172,212" fill="#252840"></polygon>
+
+    
+    <polygon points="256,-2 307,35 285,96 227,96 205,35" fill="#252840"></polygon>
+    
+    <polygon points="484,152 466,204 408,210 386,162 420,122" fill="#252840"></polygon>
+    
+    <polygon points="424,448 368,462 334,418 354,370 410,368" fill="#252840"></polygon>
+    
+    <polygon points="88,448 50,392 90,352 146,368 158,418" fill="#252840"></polygon>
+    
+    <polygon points="28,152 64,122 106,162 84,210 26,204" fill="#252840"></polygon>
+
+    
+    <line x1="256" y1="154" x2="256" y2="96" stroke="#3D4466" stroke-width="9" stroke-linecap="round"></line>
+    <line x1="256" y1="96" x2="285" y2="96" stroke="#3D4466" stroke-width="9" stroke-linecap="round"></line>
+    <line x1="256" y1="96" x2="227" y2="96" stroke="#3D4466" stroke-width="9" stroke-linecap="round"></line>
+    <path d="M 340 212 C 370 208 395 198 408 210" stroke="#3D4466" stroke-width="9" fill="none" stroke-linecap="round"></path>
+    <path d="M 309 311 C 330 335 342 360 354 370" stroke="#3D4466" stroke-width="9" fill="none" stroke-linecap="round"></path>
+    <path d="M 203 311 C 182 335 170 360 158 370" stroke="#3D4466" stroke-width="9" fill="none" stroke-linecap="round"></path>
+    <path d="M 172 212 C 142 208 117 198 106 162" stroke="#3D4466" stroke-width="9" fill="none" stroke-linecap="round"></path>
+    <path d="M 420 122 C 380 86  307 35  307 35" stroke="#3D4466" stroke-width="8" fill="none" stroke-linecap="round"></path>
+    <path d="M 205 35  C 134 66  64  122 64  122" stroke="#3D4466" stroke-width="8" fill="none" stroke-linecap="round"></path>
+    <path d="M 466 204 C 452 300 410 368 410 368" stroke="#3D4466" stroke-width="8" fill="none" stroke-linecap="round"></path>
+    <path d="M 424 448 C 330 488 90  474 50  392" stroke="#3D4466" stroke-width="8" fill="none" stroke-linecap="round"></path>
+    <path d="M 90  352 C 46  280 26  204 26  204" stroke="#3D4466" stroke-width="8" fill="none" stroke-linecap="round"></path>
+  </g>
+
+  
+  <circle cx="256" cy="248" r="220" fill="url(#ball-rim)"></circle>
+
+  
+  <circle cx="256" cy="248" r="220" fill="url(#ball-gloss)"></circle>
+
+  
+  <text x="256" y="244" text-anchor="middle" dominant-baseline="central" font-family="&#39;Barlow Condensed&#39;, &#39;Arial Black&#39;, Impact, sans-serif" font-weight="900" font-size="62" letter-spacing="5" fill="#F97316">ATLAS</text>
+
+  
+  <circle cx="256" cy="248" r="220" fill="none" stroke="#F97316" stroke-width="5" stroke-opacity="0.4"></circle>
 </svg>

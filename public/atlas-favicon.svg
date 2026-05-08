@@ -1,10 +1,83 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <!-- White background -->
-  <rect width="32" height="32" rx="7" fill="#FFFFFF"/>
-  <!-- Orange border -->
-  <rect x="1.5" y="1.5" width="29" height="29" rx="5.5" fill="none" stroke="#F97316" stroke-width="1.5"/>
-  <!-- Letter A -->
-  <polygon points="7,25 13.5,7 16,7 16,11 11.2,25" fill="#F97316"/>
-  <polygon points="25,25 18.5,7 16,7 16,11 20.8,25" fill="#F97316"/>
-  <rect x="10" y="17.5" width="12" height="2.5" rx="1.25" fill="#F97316"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <title>Atlas — Favicon</title>
+  <defs>
+    
+    <clipPath id="fav-clip">
+      <circle cx="256" cy="256" r="254"></circle>
+    </clipPath>
+    
+    <radialGradient id="fav-fill" cx="36%" cy="28%" r="70%">
+      <stop offset="0%" stop-color="#2D3250"></stop>
+      <stop offset="55%" stop-color="#1A1F38"></stop>
+      <stop offset="100%" stop-color="#0D0F1E"></stop>
+    </radialGradient>
+    
+    <radialGradient id="fav-gloss" cx="32%" cy="20%" r="52%">
+      <stop offset="0%" stop-color="white" stop-opacity="0.30"></stop>
+      <stop offset="45%" stop-color="white" stop-opacity="0.05"></stop>
+      <stop offset="100%" stop-color="white" stop-opacity="0"></stop>
+    </radialGradient>
+    
+    <radialGradient id="fav-rim" cx="50%" cy="50%" r="50%">
+      <stop offset="72%" stop-color="transparent"></stop>
+      <stop offset="100%" stop-color="rgba(0,0,0,0.45)"></stop>
+    </radialGradient>
+    <filter id="fav-shadow">
+      <feGaussianBlur stdDeviation="10"></feGaussianBlur>
+    </filter>
+  </defs>
+
+  
+  <rect width="512" height="512" fill="#FFFFFF"></rect>
+
+  
+  <ellipse cx="256" cy="275" rx="240" ry="20" fill="rgba(0,0,0,0.18)" filter="url(#fav-shadow)"></ellipse>
+
+  
+  <circle cx="256" cy="256" r="252" fill="url(#fav-fill)"></circle>
+
+  
+  <g clip-path="url(#fav-clip)">
+
+    
+    
+    <polygon points="256,154 347,224 313,330 199,330 165,224" fill="#252840"></polygon>
+
+    
+    <polygon points="256,4 310,46 288,110 224,110 202,46" fill="#252840"></polygon>
+    
+    <polygon points="488,155 470,210 410,216 387,166 422,126" fill="#252840"></polygon>
+    
+    <polygon points="428,458 370,474 336,428 356,378 414,376" fill="#252840"></polygon>
+    
+    <polygon points="84,458 50,400 86,356 144,376 158,428" fill="#252840"></polygon>
+    
+    <polygon points="24,155 90,126 125,166 102,216 42,210" fill="#252840"></polygon>
+
+    
+    <line x1="256" y1="154" x2="256" y2="110" stroke="#3D4466" stroke-width="10" stroke-linecap="round"></line>
+    <line x1="256" y1="110" x2="288" y2="110" stroke="#3D4466" stroke-width="10" stroke-linecap="round"></line>
+    <line x1="256" y1="110" x2="224" y2="110" stroke="#3D4466" stroke-width="10" stroke-linecap="round"></line>
+    <path d="M 347 224 C 378 220 404 208 410 216" stroke="#3D4466" stroke-width="10" fill="none" stroke-linecap="round"></path>
+    <path d="M 313 330 C 334 356 346 380 356 378" stroke="#3D4466" stroke-width="10" fill="none" stroke-linecap="round"></path>
+    <path d="M 199 330 C 178 356 166 380 158 378" stroke="#3D4466" stroke-width="10" fill="none" stroke-linecap="round"></path>
+    <path d="M 165 224 C 134 220 108 208 102 216" stroke="#3D4466" stroke-width="10" fill="none" stroke-linecap="round"></path>
+    <path d="M 422 126 C 380 88  310 46  310 46" stroke="#3D4466" stroke-width="9" fill="none" stroke-linecap="round"></path>
+    <path d="M 202 46  C 132 68  90  126 90  126" stroke="#3D4466" stroke-width="9" fill="none" stroke-linecap="round"></path>
+    <path d="M 470 210 C 456 308 414 376 414 376" stroke="#3D4466" stroke-width="9" fill="none" stroke-linecap="round"></path>
+    <path d="M 428 458 C 334 500 82  486 50  400" stroke="#3D4466" stroke-width="9" fill="none" stroke-linecap="round"></path>
+    <path d="M 86  356 C 42  282 42  210 42  210" stroke="#3D4466" stroke-width="9" fill="none" stroke-linecap="round"></path>
+  </g>
+
+  
+  <circle cx="256" cy="256" r="252" fill="url(#fav-rim)"></circle>
+
+  
+  <circle cx="256" cy="256" r="252" fill="url(#fav-gloss)"></circle>
+
+  
+  <text x="256" y="258" text-anchor="middle" dominant-baseline="central" font-family="&#39;Barlow Condensed&#39;, &#39;Arial Black&#39;, Impact, sans-serif" font-weight="900" font-size="200" letter-spacing="0" fill="#F97316">A</text>
+
+  
+  <circle cx="256" cy="256" r="248" fill="none" stroke="#F97316" stroke-width="14"></circle>
 </svg>
