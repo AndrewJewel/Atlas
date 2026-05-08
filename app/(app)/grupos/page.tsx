@@ -101,12 +101,12 @@ export default function GruposPage() {
           {/* Header */}
           <div
             className="grid px-3.5 py-2.5"
-            style={{ gridTemplateColumns: "28px 1fr repeat(8, 26px)", borderBottom: "1px solid rgba(255,255,255,0.06)", gap: 2 }}
+            style={{ gridTemplateColumns: "24px minmax(0,1fr) repeat(8, 22px)", borderBottom: "1px solid rgba(255,255,255,0.06)", gap: 2 }}
           >
             {["#", "Club", "PJ", "G", "E", "P", "GF", "GC", "DG", "Pts"].map((h, i) => (
               <span
                 key={i}
-                className="text-[10px] font-bold text-atlas-dimmed"
+                className="text-[9px] font-bold text-atlas-dimmed"
                 style={{ textAlign: i === 0 || i > 1 ? "center" : "left" }}
               >
                 {h}
@@ -118,23 +118,23 @@ export default function GruposPage() {
           {WC_GROUPS[activeGroup].map((team, i) => (
             <div
               key={i}
-              className="grid px-3.5 py-2.5 items-center transition-colors"
+              className="grid px-3.5 py-2 items-center transition-colors"
               style={{
-                gridTemplateColumns: "28px 1fr repeat(8, 26px)",
+                gridTemplateColumns: "24px minmax(0,1fr) repeat(8, 22px)",
                 borderBottom: "1px solid rgba(255,255,255,0.04)",
                 borderLeft: i < 2 ? "3px solid #22C55E" : "3px solid transparent",
                 gap: 2,
               }}
             >
-              <span className="text-[12px] font-bold text-atlas-dimmed text-center">{i + 1}</span>
-              <div className="flex items-center gap-1.5">
+              <span className="text-[11px] font-bold text-atlas-dimmed text-center">{i + 1}</span>
+              <div className="flex items-center gap-1 min-w-0">
                 <TeamFlag code={team.code} size="xs" shape="rounded" />
-                <span className="text-[13px] font-medium text-atlas-text truncate">{team.name}</span>
+                <span className="text-[12px] font-medium text-atlas-text truncate">{team.name}</span>
               </div>
               {[team.pj, team.g, team.e, team.p, team.gf, team.gc, team.dg].map((v, j) => (
-                <span key={j} className="text-[12px] text-atlas-muted text-center">{v}</span>
+                <span key={j} className="text-[11px] text-atlas-muted text-center">{v}</span>
               ))}
-              <span className="text-[13px] font-extrabold text-atlas-text text-center">{team.pts}</span>
+              <span className="text-[12px] font-extrabold text-atlas-text text-center">{team.pts}</span>
             </div>
           ))}
 
