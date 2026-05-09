@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Barlow_Condensed, DM_Sans } from "next/font/google";
+import { UserProvider } from "@/contexts/user-context";
 import "./globals.css";
 
 const barlowCondensed = Barlow_Condensed({
@@ -40,7 +41,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${barlowCondensed.variable} ${dmSans.variable}`}
     >
       <body className="min-h-screen bg-atlas-bg text-atlas-text">
-        {children}
+        <UserProvider>{children}</UserProvider>
       </body>
     </html>
   );

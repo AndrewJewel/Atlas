@@ -7,7 +7,7 @@ import { useUser } from "@/hooks/use-user";
 import { useMatchNotifications } from "@/hooks/use-match-notifications";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { user, authSession, loaded, profileLoaded } = useUser();
+  const { user, authSession, profileLoaded } = useUser();
   const router = useRouter();
 
   useMatchNotifications(user?.team);
@@ -19,18 +19,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Solo redirigir cuando auth Y perfil están completamente cargados
     if (!profileLoaded) return;
-    if (!authSession) { router.replace("/"); return; }
-    if (!user) { router.replace("/"); return; }
+    if (!authSession || !user) { router.replace("/"); return; }
   }, [profileLoaded, user, authSession, router]);
 
-  // Mostrar spinner mientras carga auth o perfil
-  if (!profileLoaded || !user) return (
+  // Spinner mientras carga sesión o perfil
+  if (!profileLoaded) return (
     <div className="bg-atlas-bg min-h-screen flex items-center justify-center">
       <div className="w-8 h-8 rounded-full border-2 border-atlas-primary border-t-transparent animate-spin" />
     </div>
   );
+
+  // profileLoaded pero sin usuario → redirect en curso, no renderizar
+  if (!user) return null;
 
   return (
     <div className="flex flex-col min-h-screen max-w-md mx-auto bg-atlas-bg relative">

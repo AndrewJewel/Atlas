@@ -60,9 +60,10 @@ export default function PredictorPage() {
   const [loadingRank, setLoadingRank] = useState(false);
 
   const load = useCallback(async () => {
+    if (!user?.id) return;
     const data = await loadUserPredictions();
     setPreds(data);
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -73,7 +74,7 @@ export default function PredictorPage() {
       try {
         const [g, grps] = await Promise.all([
           activeGroup === "global" ? getGlobalRanking() : getGroupRanking(activeGroup),
-          getUserGroups(),
+          user?.id ? getUserGroups(user.id) : Promise.resolve([]),
         ]);
         setRanking(g);
         setGroups(grps);
@@ -124,7 +125,8 @@ export default function PredictorPage() {
     setSaving(matchId);
     const hs = d.home !== "" ? parseInt(d.home) : null;
     const as_ = d.away !== "" ? parseInt(d.away) : null;
-    const { error } = await savePrediction(matchId, hs, as_, d.winner);
+    if (!user?.id) return;
+    const { error } = await savePrediction(user.id, matchId, hs, as_, d.winner);
     if (!error) await load();
     setSaving(null);
   };

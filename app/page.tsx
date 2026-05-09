@@ -6,14 +6,14 @@ import { useUser } from "@/hooks/use-user";
 import type { Team } from "@/lib/types";
 
 export default function RootPage() {
-  const { user, authSession, loaded, completeProfile } = useUser();
+  const { user, authSession, profileLoaded, completeProfile } = useUser();
   const router = useRouter();
 
   useEffect(() => {
-    if (loaded && user) router.replace("/partidos");
-  }, [loaded, user, router]);
+    if (profileLoaded && user) router.replace("/partidos");
+  }, [profileLoaded, user, router]);
 
-  if (!loaded) return (
+  if (!profileLoaded) return (
     <div className="min-h-screen bg-atlas-bg flex items-center justify-center">
       <div className="w-8 h-8 rounded-full border-2 border-atlas-primary border-t-transparent animate-spin" />
     </div>

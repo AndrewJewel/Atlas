@@ -26,15 +26,35 @@ export interface UserGroup {
   name: string;
 }
 
-// ET (EDT UTC-4) kickoff → UTC timestamp for lock comparison
-function kickoffUTC(date: string, etTime: string): Date {
+// UTC offset (hours) for each host city during summer 2026 (DST)
+const CITY_UTC_OFFSET: Record<string, number> = {
+  "Cd. de México":  -5,
+  "Guadalajara":    -5,
+  "Monterrey":      -5,
+  "Toronto":        -4,
+  "Vancouver":      -7,
+  "Los Ángeles":    -7,
+  "Santa Clara":    -7,
+  "Seattle":        -7,
+  "Houston":        -5,
+  "Dallas":         -5,
+  "Kansas City":    -5,
+  "Filadelfia":     -4,
+  "Nueva York":     -4,
+  "Boston":         -4,
+  "Miami":          -4,
+  "Atlanta":        -4,
+};
+
+function kickoffUTC(date: string, time: string, city: string): Date {
   const [y, mo, d] = date.split("-").map(Number);
-  const [h, mi] = etTime.split(":").map(Number);
-  return new Date(Date.UTC(y, mo - 1, d, h + 4, mi));
+  const [h, mi] = time.split(":").map(Number);
+  const offset = CITY_UTC_OFFSET[city] ?? -4;
+  return new Date(Date.UTC(y, mo - 1, d, h - offset, mi));
 }
 
-export function isMatchLocked(match: Pick<Match, "date" | "time">): boolean {
-  return Date.now() >= kickoffUTC(match.date, match.time).getTime();
+export function isMatchLocked(match: Pick<Match, "date" | "time" | "city">): boolean {
+  return Date.now() >= kickoffUTC(match.date, match.time, match.city).getTime();
 }
 
 export function calculatePoints(
@@ -52,16 +72,14 @@ export function calculatePoints(
 }
 
 export async function savePrediction(
+  userId: string,
   matchId: number,
   homeScore: number | null,
   awayScore: number | null,
   predictedWinner: PredWinner
 ): Promise<{ error: string | null }> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "No autenticado" };
-
   const { error } = await supabase.from("predictions").upsert(
-    { user_id: user.id, match_id: matchId, home_score: homeScore, away_score: awayScore, predicted_winner: predictedWinner },
+    { user_id: userId, match_id: matchId, home_score: homeScore, away_score: awayScore, predicted_winner: predictedWinner },
     { onConflict: "user_id,match_id", ignoreDuplicates: false }
   );
   return { error: error?.message ?? null };
@@ -96,21 +114,16 @@ export async function getGroupRanking(groupId: string): Promise<RankingEntry[]> 
   }));
 }
 
-export async function getUserGroups(): Promise<UserGroup[]> {
+export async function getUserGroups(userId: string): Promise<UserGroup[]> {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return [];
-
-    // Primero obtenemos los group_ids del usuario
     const { data: members, error: me } = await supabase
       .from("group_members")
       .select("group_id")
-      .eq("user_id", user.id);
+      .eq("user_id", userId);
     if (me || !members || members.length === 0) return [];
 
     const groupIds = members.map((m: { group_id: string }) => m.group_id);
 
-    // Luego buscamos los nombres de esos grupos
     const { data: grps, error: ge } = await supabase
       .from("groups")
       .select("id, name")
