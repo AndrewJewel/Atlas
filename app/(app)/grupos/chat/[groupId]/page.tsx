@@ -2,11 +2,10 @@
 export const dynamic = "force-dynamic";
 import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useParams, useSearchParams } from "next/navigation";
 import { useUser } from "@/hooks/use-user";
 import { supabase } from "@/lib/supabase";
 import type { Message, Avatar } from "@/lib/types";
-
-const GROUP_ID = "global";
 
 type DbRow = {
   id: string;
@@ -31,13 +30,15 @@ function rowToMessage(row: DbRow, myId: string): Message {
 }
 
 export default function ChatPage() {
+  const { groupId } = useParams<{ groupId: string }>();
+  const searchParams = useSearchParams();
   const { user } = useUser();
+  const groupName = searchParams.get("name") ?? "";
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [atlasTyping, setAtlasTyping] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
-  // user.id = auth.uid() — garantizado por el layout
   const myId = user?.id ?? "";
 
   const scrollDown = () => {
@@ -46,10 +47,12 @@ export default function ChatPage() {
   useEffect(() => { scrollDown(); }, [messages, atlasTyping]);
 
   useEffect(() => {
+    if (!groupId) return;
+
     supabase
       .from("chat_messages")
       .select("*")
-      .eq("group_id", GROUP_ID)
+      .eq("group_id", groupId)
       .order("created_at", { ascending: true })
       .limit(50)
       .then(({ data }) => {
@@ -57,10 +60,10 @@ export default function ChatPage() {
       });
 
     const channel = supabase
-      .channel("chat_global")
+      .channel(`chat_${groupId}`)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "chat_messages", filter: `group_id=eq.${GROUP_ID}` },
+        { event: "INSERT", schema: "public", table: "chat_messages", filter: `group_id=eq.${groupId}` },
         (payload) => {
           const msg = rowToMessage(payload.new as DbRow, myId);
           setMessages((prev) =>
@@ -72,17 +75,17 @@ export default function ChatPage() {
 
     return () => { supabase.removeChannel(channel); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [groupId]);
 
   const sendMessage = useCallback(async () => {
     const text = input.trim();
-    if (!text || !user) return;
+    if (!text || !user || !groupId) return;
     setInput("");
 
     const { data } = await supabase
       .from("chat_messages")
       .insert({
-        group_id: GROUP_ID,
+        group_id: groupId,
         user_id: myId,
         username: user.username,
         avatar: JSON.stringify(user.avatar),
@@ -128,7 +131,7 @@ export default function ChatPage() {
         setAtlasTyping(false);
       }
     }
-  }, [input, user, myId]);
+  }, [input, user, myId, groupId]);
 
   return (
     <div className="flex flex-col h-screen max-w-md mx-auto" style={{ background: "var(--atlas-bg)" }}>
@@ -140,9 +143,9 @@ export default function ChatPage() {
         <Link href="/grupos" className="text-[22px] text-atlas-text leading-none">←</Link>
         <div className="flex-1">
           <div style={{ fontFamily: "var(--font-display)" }} className="text-[18px] font-bold text-atlas-text tracking-tight">
-            Chat Global 🌍
+            {groupName || "Chat"} 💬
           </div>
-          <div className="text-[12px] text-atlas-primary">Todos los fanáticos · Atlas IA activo</div>
+          <div className="text-[12px] text-atlas-primary">Atlas IA activo</div>
         </div>
         <button onClick={() => setShowInfo(!showInfo)} className="text-[22px] text-atlas-muted">⋯</button>
       </div>

@@ -184,7 +184,7 @@ export default function GruposPage() {
 
                 <div className="flex gap-2">
                   <Link
-                    href="/grupos/chat"
+                    href={`/grupos/chat/${current.id}?name=${encodeURIComponent(current.name)}`}
                     className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-white text-[13px] font-bold"
                     style={{ background: "#F97316", fontFamily: "var(--font-sans)" }}
                   >
