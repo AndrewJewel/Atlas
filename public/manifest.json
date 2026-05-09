@@ -4,7 +4,7 @@
   "description": "Chat · Polla · Álbum Panini · Atlas IA. El Mundial en tu grupo.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#090B19",
+  "background_color": "#000000",
   "theme_color": "#090B19",
   "orientation": "portrait-primary",
   "icons": [
@@ -12,13 +12,13 @@
       "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
       "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     }
   ]
 }
