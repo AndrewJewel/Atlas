@@ -19,13 +19,16 @@ function shareGroup(group: AtlasGroup) {
 }
 
 export default function GruposPage() {
-  const { groups, loading, createGroup, joinGroup } = useGroups();
+  const { groups, loading, createGroup, joinGroup, deleteGroup } = useGroups();
   const { user } = useUser();
   const [activeGroup, setActiveGroup] = useState(0);
   const [activeWC, setActiveWC] = useState("A");
 
-  // Modal: 'create' | 'join' | null
-  const [modal, setModal] = useState<'create' | 'join' | null>(null);
+  // Modal: 'create' | 'join' | 'delete' | null
+  const [modal, setModal] = useState<'create' | 'join' | 'delete' | null>(null);
+
+  // Delete flow
+  const [deleting, setDeleting] = useState(false);
 
   // Create flow
   const [newName, setNewName] = useState("");
@@ -66,6 +69,15 @@ export default function GruposPage() {
   }
 
   function closeModal() { setModal(null); setCreated(null); setJoinError(""); }
+
+  async function handleDelete() {
+    if (!current) return;
+    setDeleting(true);
+    await deleteGroup(current.id);
+    setDeleting(false);
+    setModal(null);
+    setActiveGroup(0);
+  }
 
   return (
     <div className="flex flex-col flex-1">
@@ -158,13 +170,25 @@ export default function GruposPage() {
                       </button>
                     </div>
                   </div>
-                  <button
-                    onClick={() => shareGroup(current)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white text-[12px] font-bold"
-                    style={{ background: "#F97316" }}
-                  >
-                    📤 Compartir
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => shareGroup(current)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white text-[12px] font-bold"
+                      style={{ background: "#F97316" }}
+                    >
+                      📤 Compartir
+                    </button>
+                    {current.created_by === user?.id && (
+                      <button
+                        onClick={() => setModal('delete')}
+                        className="w-8 h-8 rounded-full flex items-center justify-center transition-all"
+                        style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.2)" }}
+                        aria-label="Eliminar grupo"
+                      >
+                        <span className="text-[14px]">🗑️</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Members */}
@@ -383,8 +407,8 @@ export default function GruposPage() {
                   maxLength={8}
                   className="w-full px-4 py-3 rounded-xl text-[18px] text-atlas-text outline-none mb-1"
                   style={{
-                    background: "#1A1F38",
-                    border: `1px solid ${joinError ? 'rgba(239,68,68,0.5)' : 'rgba(255,255,255,0.1)'}`,
+                    background: "var(--atlas-surface3)",
+                    border: `1px solid ${joinError ? 'rgba(239,68,68,0.5)' : 'var(--atlas-border-md)'}`,
                     fontFamily: "var(--font-display)",
                     letterSpacing: "0.12em",
                   }}
@@ -403,6 +427,48 @@ export default function GruposPage() {
                 </button>
                 <button onClick={() => setModal('create')} className="w-full py-2 text-[13px] text-atlas-dimmed">
                   ¿No tenés código? Crear mi grupo →
+                </button>
+              </>
+            )}
+
+            {/* ── DELETE confirmation ── */}
+            {modal === 'delete' && current && (
+              <>
+                <div className="flex flex-col items-center text-center mb-6">
+                  <div
+                    className="w-14 h-14 rounded-2xl flex items-center justify-center text-[32px] mb-4"
+                    style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.25)" }}
+                  >
+                    🗑️
+                  </div>
+                  <h2 style={{ fontFamily: "var(--font-display)" }} className="text-[22px] font-bold text-atlas-text mb-2">
+                    ¿Eliminar "{current.name}"?
+                  </h2>
+                  <p className="text-[13px] leading-relaxed" style={{ color: "#EF4444" }}>
+                    Esta acción es permanente e irreversible.
+                  </p>
+                  <p className="text-[13px] text-atlas-muted leading-relaxed mt-1">
+                    Se borrarán <span className="font-bold text-atlas-text">todos los mensajes del chat</span>, los miembros del grupo y el código de acceso. Nadie podrá recuperar nada.
+                  </p>
+                </div>
+                <button
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="w-full py-3.5 rounded-xl text-white text-[15px] font-bold mb-3 transition-all"
+                  style={{
+                    background: deleting ? "rgba(239,68,68,0.5)" : "#EF4444",
+                    opacity: deleting ? 0.8 : 1,
+                  }}
+                >
+                  {deleting ? "Eliminando…" : "Sí, eliminar para siempre"}
+                </button>
+                <button
+                  onClick={closeModal}
+                  disabled={deleting}
+                  className="w-full py-3 rounded-xl text-[14px] font-semibold"
+                  style={{ background: "var(--atlas-surface2)", color: "var(--atlas-text)" }}
+                >
+                  Cancelar
                 </button>
               </>
             )}

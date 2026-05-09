@@ -63,6 +63,29 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ groups: groups ?? [] });
 }
 
+// DELETE /api/groups?id=<groupId> → eliminar grupo (solo el creador)
+export async function DELETE(req: NextRequest) {
+  const userId = await getUserIdFromRequest(req);
+  if (!userId) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+
+  const groupId = req.nextUrl.searchParams.get("id");
+  if (!groupId) return NextResponse.json({ error: "Falta id" }, { status: 400 });
+
+  const sb = adminClient();
+
+  // Verify requester is the creator
+  const { data: group } = await sb.from("groups").select("created_by").eq("id", groupId).single();
+  if (!group) return NextResponse.json({ error: "Grupo no encontrado" }, { status: 404 });
+  if (group.created_by !== userId) return NextResponse.json({ error: "Solo el creador puede eliminar el grupo" }, { status: 403 });
+
+  // Delete in dependency order
+  await sb.from("chat_messages").delete().eq("group_id", groupId);
+  await sb.from("group_members").delete().eq("group_id", groupId);
+  await sb.from("groups").delete().eq("id", groupId);
+
+  return NextResponse.json({ ok: true });
+}
+
 // POST /api/groups → crear grupo (requiere JWT)
 export async function POST(req: NextRequest) {
   const userId = await getUserIdFromRequest(req);

@@ -54,5 +54,15 @@ export function useGroups() {
     return group ?? null;
   }
 
-  return { groups, loading, reload: load, createGroup, joinGroup };
+  async function deleteGroup(groupId: string): Promise<string | null> {
+    const headers = await authHeaders();
+    if (!headers.Authorization) return "No autenticado";
+    const res = await fetch(`/api/groups?id=${groupId}`, { method: "DELETE", headers });
+    const { error } = await res.json();
+    if (error) return error as string;
+    setGroups((p) => p.filter((g) => g.id !== groupId));
+    return null;
+  }
+
+  return { groups, loading, reload: load, createGroup, joinGroup, deleteGroup };
 }
