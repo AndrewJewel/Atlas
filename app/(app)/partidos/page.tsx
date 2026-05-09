@@ -1,4 +1,5 @@
 "use client";
+export const dynamic = "force-dynamic";
 import { useState, useEffect } from "react";
 import { AppHeader } from "@/components/app-header";
 import { useCountdown } from "@/hooks/use-countdown";
