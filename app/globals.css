@@ -17,11 +17,47 @@
   --font-sans:    "DM Sans", sans-serif;
 }
 
+/* CSS vars para inline styles — separados de @theme para poder sobreescribir */
+:root {
+  --atlas-bg:       #090B19;
+  --atlas-surface:  #0F1228;
+  --atlas-surface2: #181B30;
+  --atlas-surface3: #1A1F33;
+  --atlas-text:     #EDF0FF;
+  --atlas-muted:    #8892B0;
+  --atlas-dimmed:   #4A5178;
+  --atlas-border:   rgba(255,255,255,0.06);
+  --atlas-border-md:rgba(255,255,255,0.10);
+  --atlas-border-card: rgba(255,255,255,0.07);
+}
+
+[data-theme="light"] {
+  /* Tailwind classes */
+  --color-atlas-bg:       #F0F2FF;
+  --color-atlas-surface:  #FFFFFF;
+  --color-atlas-surface2: #EEF0FF;
+  --color-atlas-surface3: #E4E7FF;
+  --color-atlas-text:     #0D1117;
+  --color-atlas-muted:    #4A5178;
+  --color-atlas-dimmed:   #7C84A8;
+  /* Inline style vars */
+  --atlas-bg:       #F0F2FF;
+  --atlas-surface:  #FFFFFF;
+  --atlas-surface2: #EEF0FF;
+  --atlas-surface3: #E4E7FF;
+  --atlas-text:     #0D1117;
+  --atlas-muted:    #4A5178;
+  --atlas-dimmed:   #7C84A8;
+  --atlas-border:   rgba(0,0,0,0.06);
+  --atlas-border-md:rgba(0,0,0,0.10);
+  --atlas-border-card: rgba(0,0,0,0.07);
+}
+
 * { box-sizing: border-box; }
 
 html, body {
-  background: #090B19;
-  color: #EDF0FF;
+  background: var(--atlas-bg);
+  color: var(--atlas-text);
   font-family: "DM Sans", sans-serif;
   -webkit-font-smoothing: antialiased;
 }

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Barlow_Condensed, DM_Sans } from "next/font/google";
 import { UserProvider } from "@/contexts/user-context";
+import { ThemeProvider } from "@/contexts/theme-context";
 import "./globals.css";
 
 const barlowCondensed = Barlow_Condensed({
@@ -41,7 +42,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${barlowCondensed.variable} ${dmSans.variable}`}
     >
       <body className="min-h-screen bg-atlas-bg text-atlas-text">
-        <UserProvider>{children}</UserProvider>
+        {/* Anti-flash: aplica tema guardado antes de que React hidrate */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){var t=localStorage.getItem('atlas-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);})()`,
+          }}
+        />
+        <ThemeProvider>
+          <UserProvider>{children}</UserProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

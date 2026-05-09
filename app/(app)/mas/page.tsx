@@ -4,17 +4,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useUser } from "@/hooks/use-user";
+import { useTheme } from "@/contexts/theme-context";
 import { AppHeader } from "@/components/app-header";
-
-const MENU_ITEMS = [
-  { icon: "🏆", label: "Campeones históricos", sub: "Todos los ganadores del Mundial", href: "/mas/campeones" },
-  { icon: "📒", label: "Álbum Panini",          sub: "287 / 640 láminas completadas",  href: "/mas/panini" },
-  { icon: "🌍", label: "Idioma",                sub: "Español",                         href: null },
-  { icon: "🌙", label: "Modo oscuro",           sub: "Activo",                          href: null },
-];
 
 export default function MasPage() {
   const { user, completeProfile, signOut } = useUser();
+  const { theme, toggleTheme } = useTheme();
   const router = useRouter();
 
   const [editing, setEditing] = useState(false);
@@ -143,12 +138,16 @@ export default function MasPage() {
         </div>
 
         {/* ── Menu Items ───────────────────────────────────── */}
-        {MENU_ITEMS.map((item, i) => {
+        {[
+          { icon: "🏆", label: "Campeones históricos", sub: "Todos los ganadores del Mundial", href: "/mas/campeones" },
+          { icon: "📒", label: "Álbum Panini",          sub: "287 / 640 láminas completadas",  href: "/mas/panini" },
+          { icon: "🌍", label: "Idioma",                sub: "Español",                         href: null },
+        ].map((item, i) => {
           const Inner = (
             <div
               key={i}
               className="flex items-center gap-3.5 p-4 rounded-2xl mb-2 w-full text-left"
-              style={{ background: "#0F1228", border: "1px solid rgba(255,255,255,0.06)" }}
+              style={{ background: "var(--atlas-surface)", border: "1px solid var(--atlas-border)" }}
             >
               <span className="text-[22px] flex-shrink-0">{item.icon}</span>
               <div className="flex-1">
@@ -164,6 +163,33 @@ export default function MasPage() {
             <button key={i} className="w-full cursor-default">{Inner}</button>
           );
         })}
+
+        {/* ── Modo oscuro / claro ──────────────────────────── */}
+        <button
+          onClick={toggleTheme}
+          className="w-full flex items-center gap-3.5 p-4 rounded-2xl mb-2 transition-all"
+          style={{ background: "var(--atlas-surface)", border: "1px solid var(--atlas-border)" }}
+        >
+          <span className="text-[22px] flex-shrink-0">{theme === "dark" ? "🌙" : "☀️"}</span>
+          <div className="flex-1 text-left">
+            <div className="text-[15px] font-semibold text-atlas-text">
+              {theme === "dark" ? "Modo oscuro" : "Modo claro"}
+            </div>
+            <div className="text-[12px] text-atlas-dimmed mt-0.5">
+              {theme === "dark" ? "Activo" : "Activo"}
+            </div>
+          </div>
+          {/* Toggle pill */}
+          <div
+            className="relative flex-shrink-0 w-12 h-6 rounded-full transition-all duration-300"
+            style={{ background: theme === "dark" ? "#4A5178" : "#F97316" }}
+          >
+            <div
+              className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all duration-300"
+              style={{ left: theme === "dark" ? 2 : 26 }}
+            />
+          </div>
+        </button>
 
         {/* ── Sign Out ─────────────────────────────────────── */}
         <button

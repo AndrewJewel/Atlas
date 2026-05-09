@@ -16,8 +16,8 @@ export function BottomNav() {
     <nav
       className="fixed bottom-0 left-0 right-0 z-40 flex"
       style={{
-        background: "#0F1228",
-        borderTop: "1px solid rgba(255,255,255,0.08)",
+        background: "var(--atlas-surface)",
+        borderTop: "1px solid var(--atlas-border-md)",
         paddingBottom: "env(safe-area-inset-bottom, 12px)",
       }}
     >
