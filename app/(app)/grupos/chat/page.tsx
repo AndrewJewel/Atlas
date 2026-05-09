@@ -131,11 +131,11 @@ export default function ChatPage() {
   }, [input, user, myId]);
 
   return (
-    <div className="flex flex-col h-screen max-w-md mx-auto" style={{ background: "#090B19" }}>
+    <div className="flex flex-col h-screen max-w-md mx-auto" style={{ background: "var(--atlas-bg)" }}>
       {/* Header */}
       <div
         className="flex items-center gap-3 px-4 py-3 flex-shrink-0"
-        style={{ background: "#0F1228", borderBottom: "1px solid rgba(255,255,255,0.06)" }}
+        style={{ background: "var(--atlas-surface)", borderBottom: "1px solid var(--atlas-border)" }}
       >
         <Link href="/grupos" className="text-[22px] text-atlas-text leading-none">←</Link>
         <div className="flex-1">
@@ -189,8 +189,8 @@ export default function ChatPage() {
                 <div
                   className="px-3.5 py-2.5 text-[14px] text-atlas-text leading-snug"
                   style={{
-                    background: isMe ? "#F97316" : isAtlas ? "#1A1F33" : "#181B30",
-                    border: isAtlas ? "1px solid rgba(249,115,22,0.3)" : "1px solid rgba(255,255,255,0.06)",
+                    background: isMe ? "#F97316" : isAtlas ? "var(--atlas-surface3)" : "var(--atlas-surface2)",
+                    border: isAtlas ? "1px solid rgba(249,115,22,0.3)" : "1px solid var(--atlas-border)",
                     borderRadius: isMe ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
                     fontFamily: "var(--font-sans)",
                   }}
@@ -207,7 +207,7 @@ export default function ChatPage() {
         {atlasTyping && (
           <div className="flex gap-2 items-end justify-start">
             <div className="w-[30px] h-[30px] rounded-[9px] flex items-center justify-center text-[16px] flex-shrink-0" style={{ background: "#F97316" }}>🤖</div>
-            <div className="px-3.5 py-2.5 rounded-[18px_18px_18px_4px]" style={{ background: "#1A1F33", border: "1px solid rgba(249,115,22,0.3)" }}>
+            <div className="px-3.5 py-2.5 rounded-[18px_18px_18px_4px]" style={{ background: "var(--atlas-surface3)", border: "1px solid rgba(249,115,22,0.3)" }}>
               <div className="flex gap-1 items-center">
                 <span className="typing-dot" />
                 <span className="typing-dot" />
@@ -221,11 +221,11 @@ export default function ChatPage() {
       {/* Input */}
       <div
         className="flex gap-2 px-3.5 py-2.5 flex-shrink-0"
-        style={{ background: "#0F1228", borderTop: "1px solid rgba(255,255,255,0.06)" }}
+        style={{ background: "var(--atlas-surface)", borderTop: "1px solid var(--atlas-border)" }}
       >
         <input
           className="flex-1 px-4 py-2.5 rounded-3xl text-atlas-text text-[14px] outline-none"
-          style={{ background: "#181B30", border: "1px solid rgba(255,255,255,0.08)", fontFamily: "var(--font-sans)" }}
+          style={{ background: "var(--atlas-surface2)", border: "1px solid var(--atlas-glass-md)", fontFamily: "var(--font-sans)" }}
           placeholder="Mensaje… o @Atlas para preguntar"
           value={input}
           onChange={(e) => setInput(e.target.value)}

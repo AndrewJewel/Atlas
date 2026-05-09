@@ -75,13 +75,13 @@ export default function GruposPage() {
         {/* ── My Groups ─────────────────────────────────────────── */}
 
         {loading ? (
-          <div className="rounded-[18px] mb-5 animate-pulse" style={{ background: "#0F1228", height: 164 }} />
+          <div className="rounded-[18px] mb-5 animate-pulse" style={{ background: "var(--atlas-surface)", height: 164 }} />
 
         ) : groups.length === 0 ? (
           /* Empty state */
           <div
             className="rounded-[18px] p-6 mb-5 flex flex-col items-center text-center gap-3"
-            style={{ background: "linear-gradient(135deg,#1A1F33,#141826)", border: "1px solid rgba(249,115,22,0.2)" }}
+            style={{ background: "linear-gradient(135deg,var(--atlas-surface3),var(--atlas-surface))", border: "1px solid rgba(249,115,22,0.2)" }}
           >
             <span className="text-[44px]">🏆</span>
             <p className="text-[18px] font-bold text-atlas-text" style={{ fontFamily: "var(--font-display)" }}>
@@ -101,7 +101,7 @@ export default function GruposPage() {
               <button
                 onClick={() => setModal('join')}
                 className="flex-1 py-3 rounded-xl text-[14px] font-semibold"
-                style={{ background: "#181B30", border: "1px solid rgba(255,255,255,0.12)", color: "#EDF0FF" }}
+                style={{ background: "var(--atlas-surface2)", border: "1px solid var(--atlas-glass-border)", color: "var(--atlas-text)" }}
               >
                 Unirme
               </button>
@@ -119,8 +119,8 @@ export default function GruposPage() {
                   className="flex-shrink-0 px-4 py-1.5 rounded-full text-[13px] font-bold transition-all"
                   style={{
                     fontFamily: "var(--font-display)",
-                    background: activeGroup === i ? "#F97316" : "#181B30",
-                    border: `1px solid ${activeGroup === i ? "#F97316" : "rgba(255,255,255,0.08)"}`,
+                    background: activeGroup === i ? "#F97316" : "var(--atlas-surface2)",
+                    border: `1px solid ${activeGroup === i ? "#F97316" : "var(--atlas-glass-md)"}`,
                     color: activeGroup === i ? "#fff" : "#8892B0",
                   }}
                 >
@@ -130,7 +130,7 @@ export default function GruposPage() {
               <button
                 onClick={() => setModal('create')}
                 className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-[18px] font-bold"
-                style={{ background: "#181B30", border: "1px solid rgba(255,255,255,0.12)", color: "#8892B0" }}
+                style={{ background: "var(--atlas-surface2)", border: "1px solid var(--atlas-glass-border)", color: "#8892B0" }}
               >
                 +
               </button>
@@ -140,7 +140,7 @@ export default function GruposPage() {
             {current && (
               <div
                 className="rounded-[18px] p-4 mb-5"
-                style={{ background: "linear-gradient(135deg,#1A1F33,#141826)", border: "1px solid rgba(249,115,22,0.25)" }}
+                style={{ background: "linear-gradient(135deg,var(--atlas-surface3),var(--atlas-surface))", border: "1px solid rgba(249,115,22,0.25)" }}
               >
                 <div className="flex justify-between items-start mb-3">
                   <div>
@@ -193,7 +193,7 @@ export default function GruposPage() {
                   <button
                     onClick={() => setModal('join')}
                     className="flex-1 py-2.5 rounded-xl text-[13px] font-semibold"
-                    style={{ background: "rgba(255,255,255,0.05)", border: "1px dashed rgba(255,255,255,0.15)", color: "#8892B0" }}
+                    style={{ background: "var(--atlas-glass)", border: "1px dashed var(--atlas-glass-border)", color: "#8892B0" }}
                   >
                     + Invitar
                   </button>
@@ -217,8 +217,8 @@ export default function GruposPage() {
               className="flex-shrink-0 px-3.5 py-1.5 rounded-full text-[13px] font-bold transition-all"
               style={{
                 fontFamily: "var(--font-display)",
-                background: activeWC === g ? "#F97316" : "#181B30",
-                border: `1px solid ${activeWC === g ? "#F97316" : "rgba(255,255,255,0.08)"}`,
+                background: activeWC === g ? "#F97316" : "var(--atlas-surface2)",
+                border: `1px solid ${activeWC === g ? "#F97316" : "var(--atlas-glass-md)"}`,
                 color: activeWC === g ? "#fff" : "#8892B0",
               }}
             >
@@ -229,11 +229,11 @@ export default function GruposPage() {
 
         <div
           className="rounded-2xl overflow-hidden mb-2"
-          style={{ background: "#0F1228", border: "1px solid rgba(255,255,255,0.06)" }}
+          style={{ background: "var(--atlas-surface)", border: "1px solid var(--atlas-border)" }}
         >
           <div
             className="grid px-3.5 py-2.5"
-            style={{ gridTemplateColumns: "24px minmax(0,1fr) repeat(8, 22px)", borderBottom: "1px solid rgba(255,255,255,0.06)", gap: 2 }}
+            style={{ gridTemplateColumns: "24px minmax(0,1fr) repeat(8, 22px)", borderBottom: "1px solid var(--atlas-border)", gap: 2 }}
           >
             {["#", "Selección", "PJ", "G", "E", "P", "GF", "GC", "DG", "Pts"].map((h, i) => (
               <span key={i} className="text-[9px] font-bold text-atlas-dimmed" style={{ textAlign: i === 0 || i > 1 ? "center" : "left" }}>
@@ -247,7 +247,7 @@ export default function GruposPage() {
               className="grid px-3.5 py-2 items-center"
               style={{
                 gridTemplateColumns: "24px minmax(0,1fr) repeat(8, 22px)",
-                borderBottom: "1px solid rgba(255,255,255,0.04)",
+                borderBottom: "1px solid var(--atlas-glass-sm)",
                 borderLeft: i < 2 ? "3px solid #22C55E" : "3px solid transparent",
                 gap: 2,
               }}
@@ -280,10 +280,10 @@ export default function GruposPage() {
         >
           <div
             className="w-full max-w-lg rounded-t-[28px] p-6 pb-10"
-            style={{ background: "#111527" }}
+            style={{ background: "var(--atlas-surface)" }}
             onClick={e => e.stopPropagation()}
           >
-            <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{ background: "rgba(255,255,255,0.15)" }} />
+            <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{ background: "var(--atlas-glass-border)" }} />
 
             {/* ── CREATE — Step 1: name input ── */}
             {modal === 'create' && !created && (
@@ -302,7 +302,7 @@ export default function GruposPage() {
                   placeholder="ej: Los Cracks 🔥"
                   maxLength={50}
                   className="w-full px-4 py-3 rounded-xl text-[16px] text-atlas-text outline-none mb-4"
-                  style={{ background: "#1A1F38", border: "1px solid rgba(255,255,255,0.1)" }}
+                  style={{ background: "var(--atlas-surface3)", border: "1px solid var(--atlas-border-md)" }}
                 />
                 <button
                   onClick={handleCreate}
@@ -330,7 +330,7 @@ export default function GruposPage() {
                 </div>
                 <div
                   className="flex items-center justify-center py-5 rounded-2xl mb-5"
-                  style={{ background: "#1A1F38" }}
+                  style={{ background: "var(--atlas-surface3)" }}
                 >
                   <span
                     className="text-[36px] font-black"
@@ -351,9 +351,9 @@ export default function GruposPage() {
                     onClick={() => copyLink(created)}
                     className="flex-1 py-3.5 rounded-xl text-[14px] font-semibold"
                     style={{
-                      background: "#1A1F38",
-                      border: "1px solid rgba(255,255,255,0.1)",
-                      color: copied ? "#22C55E" : "#EDF0FF",
+                      background: "var(--atlas-surface3)",
+                      border: "1px solid var(--atlas-border-md)",
+                      color: copied ? "#22C55E" : "var(--atlas-text)",
                     }}
                   >
                     {copied ? "✓ Copiado" : "🔗 Copiar link"}

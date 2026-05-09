@@ -19,9 +19,9 @@ const CONF_FILTERS = [
 ] as const;
 
 const selectStyle: CSSProperties = {
-  background: "#0F1228",
-  border: "1px solid rgba(255,255,255,0.10)",
-  color: "#EDF0FF",
+  background: "var(--atlas-surface)",
+  border: "1px solid var(--atlas-border-md)",
+  color: "var(--atlas-text)",
   borderRadius: 10,
   padding: "6px 10px",
   fontSize: 12,
@@ -101,11 +101,11 @@ export default function CampeonesPage() {
   }, [allChampions, conf, decade, country]);
 
   return (
-    <div className="flex flex-col flex-1" style={{ background: "#090B19" }}>
+    <div className="flex flex-col flex-1" style={{ background: "var(--atlas-bg)" }}>
       {/* Header */}
       <div
         className="flex items-center gap-3 px-4 pt-3 pb-3 flex-shrink-0"
-        style={{ background: "#0F1228", borderBottom: "1px solid rgba(255,255,255,0.06)" }}
+        style={{ background: "var(--atlas-surface)", borderBottom: "1px solid var(--atlas-border)" }}
       >
         <Link href="/mas" className="text-[22px] text-atlas-text leading-none">←</Link>
         <span style={{ fontFamily: "var(--font-display)" }} className="text-[20px] font-bold text-atlas-text tracking-tight">
@@ -116,7 +116,7 @@ export default function CampeonesPage() {
       {/* Tabs */}
       <div
         className="flex flex-shrink-0"
-        style={{ background: "#0F1228", borderBottom: "1px solid rgba(255,255,255,0.06)" }}
+        style={{ background: "var(--atlas-surface)", borderBottom: "1px solid var(--atlas-border)" }}
       >
         {TABS.map(({ key, label }) => (
           <button
@@ -137,7 +137,7 @@ export default function CampeonesPage() {
 
       {/* Filters — solo en Ediciones */}
       {tab === "ediciones" && (
-        <div className="flex-shrink-0 px-4 pt-3 pb-2.5 flex flex-col gap-2.5" style={{ background: "#090B19" }}>
+        <div className="flex-shrink-0 px-4 pt-3 pb-2.5 flex flex-col gap-2.5" style={{ background: "var(--atlas-bg)" }}>
           {/* Confederación — chips */}
           <div className="flex gap-2">
             {CONF_FILTERS.map(({ key, label }) => (
@@ -146,8 +146,8 @@ export default function CampeonesPage() {
                 onClick={() => setConf(key)}
                 className="flex-shrink-0 px-3 py-1.5 rounded-full text-[11px] font-bold tracking-wide transition-all"
                 style={{
-                  background: conf === key ? "#F97316" : "#0F1228",
-                  border: `1px solid ${conf === key ? "#F97316" : "rgba(255,255,255,0.08)"}`,
+                  background: conf === key ? "#F97316" : "var(--atlas-surface)",
+                  border: `1px solid ${conf === key ? "#F97316" : "var(--atlas-glass-md)"}`,
                   color: conf === key ? "#fff" : "#8892B0",
                   fontFamily: "var(--font-display)",
                 }}
@@ -201,10 +201,10 @@ export default function CampeonesPage() {
                 key={c.year}
                 className="rounded-2xl p-4 mb-2.5"
                 style={{
-                  background: c.year === 2026 ? "rgba(249,115,22,0.06)" : "#0F1228",
+                  background: c.year === 2026 ? "rgba(249,115,22,0.06)" : "var(--atlas-surface)",
                   border: c.year === 2026
                     ? "1px solid rgba(249,115,22,0.3)"
-                    : "1px solid rgba(255,255,255,0.07)",
+                    : "1px solid var(--atlas-border-card)",
                 }}
               >
                 <div className="flex items-start justify-between mb-1">
@@ -232,7 +232,7 @@ export default function CampeonesPage() {
                   </div>
                   <div
                     className="px-3 py-1.5 rounded-xl text-atlas-text font-bold"
-                    style={{ fontFamily: "var(--font-display)", fontSize: 17, background: "#181B30" }}
+                    style={{ fontFamily: "var(--font-display)", fontSize: 17, background: "var(--atlas-surface2)" }}
                   >
                     {c.score}
                   </div>
@@ -254,7 +254,7 @@ export default function CampeonesPage() {
               <div
                 key={i}
                 className="flex items-center gap-3 px-4 py-3 rounded-xl"
-                style={{ background: "#0F1228" }}
+                style={{ background: "var(--atlas-surface)" }}
               >
                 <span style={{ fontFamily: "var(--font-display)" }} className="w-6 text-[16px] font-bold text-atlas-dimmed text-center">
                   {i + 1}

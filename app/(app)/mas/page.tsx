@@ -53,7 +53,7 @@ export default function MasPage() {
         {/* ── Profile Card ─────────────────────────────────── */}
         <div
           className="p-4 rounded-[18px] mb-5"
-          style={{ background: "#0F1228", border: "1px solid rgba(255,255,255,0.07)" }}
+          style={{ background: "var(--atlas-surface)", border: "1px solid var(--atlas-border-card)" }}
         >
           <div className="flex items-center gap-4">
             {/* Avatar */}
@@ -102,7 +102,7 @@ export default function MasPage() {
               <button
                 onClick={startEdit}
                 className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-all"
-                style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}
+                style={{ background: "var(--atlas-glass)", border: "1px solid var(--atlas-glass-md)" }}
                 aria-label="Editar nombre"
               >
                 <span className="text-[16px]">✏️</span>
@@ -113,7 +113,7 @@ export default function MasPage() {
                   onClick={cancelEdit}
                   disabled={saving}
                   className="w-9 h-9 rounded-xl flex items-center justify-center transition-all"
-                  style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}
+                  style={{ background: "var(--atlas-glass)", border: "1px solid var(--atlas-glass-md)" }}
                   aria-label="Cancelar"
                 >
                   <span className="text-[16px]">✕</span>

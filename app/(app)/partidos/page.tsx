@@ -108,7 +108,7 @@ export default function PartidosPage() {
       {/* Countdown Banner */}
       <div
         className="flex-shrink-0 px-5 py-4"
-        style={{ background: "linear-gradient(135deg,#1A1F33 0%,#141826 100%)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}
+        style={{ background: "linear-gradient(135deg,var(--atlas-surface3) 0%,var(--atlas-surface) 100%)", borderBottom: "1px solid var(--atlas-border)" }}
       >
         <p
           className="text-center text-[11px] font-bold tracking-[0.18em] text-atlas-muted mb-2.5"
@@ -127,7 +127,7 @@ export default function PartidosPage() {
               <div key={i} className="flex flex-col items-center gap-1">
                 <span
                   className="text-[40px] font-black leading-none tracking-tight"
-                  style={{ fontFamily: "var(--font-display)", color: lbl === "SEG" ? "#F97316" : "#EDF0FF" }}
+                  style={{ fontFamily: "var(--font-display)", color: lbl === "SEG" ? "#F97316" : "var(--atlas-text)" }}
                 >
                   {String(val).padStart(2, "0")}
                 </span>
@@ -151,15 +151,15 @@ export default function PartidosPage() {
       </div>
 
       {/* Day Picker */}
-      <div className="flex gap-2 px-4 py-3.5 overflow-x-auto flex-shrink-0" style={{ background: "#090B19" }}>
+      <div className="flex gap-2 px-4 py-3.5 overflow-x-auto flex-shrink-0" style={{ background: "var(--atlas-bg)" }}>
         {MATCH_DAYS.map((day, i) => (
           <button
             key={i}
             onClick={() => setActiveDay(i)}
             className="flex-shrink-0 px-4 py-2 rounded-full text-[13px] font-semibold whitespace-nowrap transition-all"
             style={{
-              background: activeDay === i ? "#F97316" : "#181B30",
-              border: `1px solid ${activeDay === i ? "#F97316" : "rgba(255,255,255,0.08)"}`,
+              background: activeDay === i ? "#F97316" : "var(--atlas-surface2)",
+              border: `1px solid ${activeDay === i ? "#F97316" : "var(--atlas-glass-md)"}`,
               color: activeDay === i ? "#fff" : "#8892B0",
               fontFamily: "var(--font-sans)",
             }}
@@ -182,8 +182,8 @@ export default function PartidosPage() {
               key={m.id}
               className="mx-4 mb-2 rounded-2xl overflow-hidden cursor-pointer"
               style={{
-                background: isLive ? "linear-gradient(135deg,#1A1228 0%,#0F1228 100%)" : "#0F1228",
-                border: `1px solid ${isLive ? "rgba(249,115,22,0.3)" : "rgba(255,255,255,0.06)"}`,
+                background: isLive ? "linear-gradient(135deg,var(--atlas-surface3) 0%,var(--atlas-surface) 100%)" : "var(--atlas-surface)",
+                border: `1px solid ${isLive ? "rgba(249,115,22,0.3)" : "var(--atlas-border)"}`,
               }}
             >
               {/* Header */}
@@ -213,7 +213,7 @@ export default function PartidosPage() {
                       background: notified[m.id] ? "rgba(249,115,22,0.15)" : "transparent",
                     }}
                   >
-                    <BellIcon active={!!notified[m.id]} cardBg={isLive ? "#1A1228" : "#0F1228"} />
+                    <BellIcon active={!!notified[m.id]} cardBg={isLive ? "var(--atlas-surface3)" : "var(--atlas-surface)"} />
                   </button>
                 </div>
               </div>
@@ -226,7 +226,7 @@ export default function PartidosPage() {
                   {hasScore && (
                     <span
                       className="text-[28px] font-black leading-none min-w-[24px] text-right"
-                      style={{ fontFamily: "var(--font-display)", color: isLive ? "#F97316" : "#EDF0FF" }}
+                      style={{ fontFamily: "var(--font-display)", color: isLive ? "#F97316" : "var(--atlas-text)" }}
                     >
                       {live!.homeScore}
                     </span>
@@ -238,7 +238,7 @@ export default function PartidosPage() {
                   {hasScore && (
                     <span
                       className="text-[28px] font-black leading-none min-w-[24px] text-right"
-                      style={{ fontFamily: "var(--font-display)", color: isLive ? "#F97316" : "#EDF0FF" }}
+                      style={{ fontFamily: "var(--font-display)", color: isLive ? "#F97316" : "var(--atlas-text)" }}
                     >
                       {live!.awayScore}
                     </span>
@@ -246,7 +246,7 @@ export default function PartidosPage() {
                 </div>
 
                 {/* Footer */}
-                <div className="flex flex-col gap-0.5 pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                <div className="flex flex-col gap-0.5 pt-2" style={{ borderTop: "1px solid var(--atlas-border)" }}>
                   {!hasScore && (() => {
                     const { time, dayShifted } = toLocalKickoff(m.date, m.time);
                     return (

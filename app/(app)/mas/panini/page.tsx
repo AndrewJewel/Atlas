@@ -28,11 +28,11 @@ export default function PaniniPage() {
   const [filter, setFilter] = useState<StickerState | "all">("all");
 
   return (
-    <div className="flex flex-col h-screen max-w-md mx-auto" style={{ background: "#090B19" }}>
+    <div className="flex flex-col h-screen max-w-md mx-auto" style={{ background: "var(--atlas-bg)" }}>
       {/* Header */}
       <div
         className="flex items-center gap-3 px-4 py-3 flex-shrink-0"
-        style={{ background: "#0F1228", borderBottom: "1px solid rgba(255,255,255,0.06)" }}
+        style={{ background: "var(--atlas-surface)", borderBottom: "1px solid var(--atlas-border)" }}
       >
         <Link href="/mas" className="text-[22px] text-atlas-text">←</Link>
         <span style={{ fontFamily: "var(--font-display)" }} className="text-[20px] font-bold text-atlas-text tracking-tight">
@@ -43,7 +43,7 @@ export default function PaniniPage() {
       {/* Progress */}
       <div
         className="px-4 py-4 flex-shrink-0"
-        style={{ background: "#0F1228", borderBottom: "1px solid rgba(255,255,255,0.06)" }}
+        style={{ background: "var(--atlas-surface)", borderBottom: "1px solid var(--atlas-border)" }}
       >
         <div className="flex justify-around mb-3.5">
           {[
@@ -59,7 +59,7 @@ export default function PaniniPage() {
             </div>
           ))}
         </div>
-        <div className="h-2 rounded-full overflow-hidden mb-2" style={{ background: "#181B30" }}>
+        <div className="h-2 rounded-full overflow-hidden mb-2" style={{ background: "var(--atlas-surface2)" }}>
           <div
             className="h-full rounded-full transition-all"
             style={{ width: `${PCT}%`, background: "linear-gradient(90deg,#F97316,#FB923C)" }}
@@ -76,8 +76,8 @@ export default function PaniniPage() {
             onClick={() => setFilter(key)}
             className="flex-shrink-0 px-3.5 py-1.5 rounded-full text-[12px] font-semibold transition-all"
             style={{
-              background: filter === key ? "#F97316" : "#181B30",
-              border: `1px solid ${filter === key ? "#F97316" : "rgba(255,255,255,0.08)"}`,
+              background: filter === key ? "#F97316" : "var(--atlas-surface2)",
+              border: `1px solid ${filter === key ? "#F97316" : "var(--atlas-glass-md)"}`,
               color: filter === key ? "#fff" : "#8892B0",
             }}
           >
@@ -103,8 +103,8 @@ export default function PaniniPage() {
                     className="rounded-[6px] flex items-center justify-center"
                     style={{
                       aspectRatio: "0.75",
-                      background: state === "owned" ? "rgba(34,197,94,0.13)" : state === "dup" ? "rgba(249,115,22,0.13)" : "#181B30",
-                      border: `1.5px solid ${state === "owned" ? "rgba(34,197,94,0.44)" : state === "dup" ? "rgba(249,115,22,0.44)" : "rgba(255,255,255,0.06)"}`,
+                      background: state === "owned" ? "rgba(34,197,94,0.13)" : state === "dup" ? "rgba(249,115,22,0.13)" : "var(--atlas-surface2)",
+                      border: `1.5px solid ${state === "owned" ? "rgba(34,197,94,0.44)" : state === "dup" ? "rgba(249,115,22,0.44)" : "var(--atlas-border)"}`,
                     }}
                   >
                     <span className="text-[8px] font-bold" style={{

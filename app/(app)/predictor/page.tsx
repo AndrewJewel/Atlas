@@ -134,17 +134,17 @@ export default function PredictorPage() {
       {/* Stats Bar */}
       <div
         className="flex items-center justify-around px-5 py-3.5 flex-shrink-0"
-        style={{ background: "#0F1228", borderBottom: "1px solid rgba(255,255,255,0.06)" }}
+        style={{ background: "var(--atlas-surface)", borderBottom: "1px solid var(--atlas-border)" }}
       >
         {[
-          { val: level,              key: "NIVEL",       color: "#EDF0FF" },
+          { val: level,              key: "NIVEL",       color: "var(--atlas-text)" },
           null,
           { val: `${predicted}`,     key: "PREDICHAS",   color: "#22C55E" },
           null,
           { val: `${totalPoints}`,   key: "MIS PUNTOS",  color: "#F97316" },
         ].map((item, i) =>
           item === null ? (
-            <div key={i} className="w-px h-8" style={{ background: "rgba(255,255,255,0.08)" }} />
+            <div key={i} className="w-px h-8" style={{ background: "var(--atlas-glass-md)" }} />
           ) : (
             <div key={i} className="flex flex-col items-center gap-0.5">
               <span style={{ fontFamily: "var(--font-display)", color: item.color }} className="text-[18px] font-bold">
@@ -159,7 +159,7 @@ export default function PredictorPage() {
       {/* Tabs */}
       <div
         className="flex overflow-x-auto flex-shrink-0"
-        style={{ background: "#0F1228", borderBottom: "1px solid rgba(255,255,255,0.06)" }}
+        style={{ background: "var(--atlas-surface)", borderBottom: "1px solid var(--atlas-border)" }}
       >
         {TABS.map(({ key, label }) => (
           <button
@@ -199,7 +199,7 @@ export default function PredictorPage() {
                 <div
                   key={m.id}
                   className="rounded-[18px] p-4"
-                  style={{ background: "#0F1228", border: "1px solid rgba(255,255,255,0.07)" }}
+                  style={{ background: "var(--atlas-surface)", border: "1px solid var(--atlas-border-card)" }}
                 >
                   <div
                     className="text-[10px] font-bold tracking-widest text-atlas-primary mb-3"
@@ -214,8 +214,8 @@ export default function PredictorPage() {
                       onClick={() => toggleWinner(m.id, "home")}
                       className="flex-1 flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl transition-all"
                       style={{
-                        background: d.winner === "home" ? "rgba(249,115,22,0.15)" : "rgba(255,255,255,0.04)",
-                        border: `2px solid ${d.winner === "home" ? "#F97316" : "rgba(255,255,255,0.08)"}`,
+                        background: d.winner === "home" ? "rgba(249,115,22,0.15)" : "var(--atlas-glass-sm)",
+                        border: `2px solid ${d.winner === "home" ? "#F97316" : "var(--atlas-glass-md)"}`,
                       }}
                     >
                       <TeamFlag code={m.home.code} size="sm" shape="rounded" />
@@ -232,7 +232,7 @@ export default function PredictorPage() {
                           value={d.home}
                           onChange={(e) => updateScore(m.id, "home", e.target.value)}
                           className="w-9 h-9 text-center text-[16px] font-bold rounded-xl outline-none"
-                          style={{ background: "#181B30", border: "1px solid rgba(255,255,255,0.1)" }}
+                          style={{ background: "var(--atlas-surface2)", border: "1px solid var(--atlas-border-md)" }}
                         />
                         <span className="text-atlas-dimmed text-[18px] font-bold">:</span>
                         <input
@@ -240,7 +240,7 @@ export default function PredictorPage() {
                           value={d.away}
                           onChange={(e) => updateScore(m.id, "away", e.target.value)}
                           className="w-9 h-9 text-center text-[16px] font-bold rounded-xl outline-none"
-                          style={{ background: "#181B30", border: "1px solid rgba(255,255,255,0.1)" }}
+                          style={{ background: "var(--atlas-surface2)", border: "1px solid var(--atlas-border-md)" }}
                         />
                       </div>
                     </div>
@@ -250,8 +250,8 @@ export default function PredictorPage() {
                       onClick={() => toggleWinner(m.id, "away")}
                       className="flex-1 flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl transition-all"
                       style={{
-                        background: d.winner === "away" ? "rgba(249,115,22,0.15)" : "rgba(255,255,255,0.04)",
-                        border: `2px solid ${d.winner === "away" ? "#F97316" : "rgba(255,255,255,0.08)"}`,
+                        background: d.winner === "away" ? "rgba(249,115,22,0.15)" : "var(--atlas-glass-sm)",
+                        border: `2px solid ${d.winner === "away" ? "#F97316" : "var(--atlas-glass-md)"}`,
                       }}
                     >
                       <TeamFlag code={m.away.code} size="sm" shape="rounded" />
@@ -266,8 +266,8 @@ export default function PredictorPage() {
                     disabled={!canSave}
                     className="w-full py-2.5 rounded-xl text-[13px] font-bold tracking-wide transition-all"
                     style={{
-                      background: canSave ? "#F97316" : "rgba(255,255,255,0.04)",
-                      border: `1px solid ${canSave ? "#F97316" : "rgba(255,255,255,0.08)"}`,
+                      background: canSave ? "#F97316" : "var(--atlas-glass-sm)",
+                      border: `1px solid ${canSave ? "#F97316" : "var(--atlas-glass-md)"}`,
                       color: canSave ? "#fff" : "#4A5178",
                       fontFamily: "var(--font-display)",
                       opacity: canSave ? 1 : 0.6,
@@ -292,8 +292,8 @@ export default function PredictorPage() {
                   onClick={() => setActiveGroup(g.id)}
                   className="flex-shrink-0 px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all"
                   style={{
-                    background: activeGroup === g.id ? "#F97316" : "#181B30",
-                    border: `1px solid ${activeGroup === g.id ? "#F97316" : "rgba(255,255,255,0.08)"}`,
+                    background: activeGroup === g.id ? "#F97316" : "var(--atlas-surface2)",
+                    border: `1px solid ${activeGroup === g.id ? "#F97316" : "var(--atlas-glass-md)"}`,
                     color: activeGroup === g.id ? "#fff" : "#8892B0",
                   }}
                 >
@@ -314,7 +314,7 @@ export default function PredictorPage() {
                 </span>
               </div>
             ) : (
-              <div className="rounded-[18px] overflow-hidden" style={{ background: "#0F1228", border: "1px solid rgba(255,255,255,0.07)" }}>
+              <div className="rounded-[18px] overflow-hidden" style={{ background: "var(--atlas-surface)", border: "1px solid var(--atlas-border-card)" }}>
                 {ranking.map((r, i) => {
                   const pos = i + 1;
                   const isMe = r.user_id === user?.id;
@@ -323,7 +323,7 @@ export default function PredictorPage() {
                       key={r.user_id}
                       className="flex items-center gap-3 px-4 py-3.5"
                       style={{
-                        borderBottom: "1px solid rgba(255,255,255,0.05)",
+                        borderBottom: "1px solid var(--atlas-glass)",
                         background: isMe ? "rgba(249,115,22,0.08)" : "transparent",
                       }}
                     >
@@ -332,7 +332,7 @@ export default function PredictorPage() {
                       </span>
                       <div
                         className="w-[34px] h-[34px] rounded-[10px] flex items-center justify-center text-[20px]"
-                        style={{ background: "#1A1F33" }}
+                        style={{ background: "var(--atlas-surface3)" }}
                       >
                         {r.team_flag ?? "⭐"}
                       </div>
