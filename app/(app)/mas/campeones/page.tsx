@@ -1,8 +1,10 @@
 "use client";
 export const dynamic = "force-dynamic";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
-import { CHAMPIONS, PALMARES } from "@/lib/data";
+import { CHAMPIONS, PALMARES, WC_TEAMS } from "@/lib/data";
+import { createClient } from "@/lib/supabase/client";
+import type { Champion } from "@/lib/types";
 
 const TABS = [
   { key: "ediciones", label: "Ediciones" },
@@ -18,12 +20,41 @@ const CONF_FILTERS = [
 const DECADES = ["Todos", "1930", "1950", "1960", "1970", "1980", "1990", "2000", "2010", "2020"] as const;
 
 export default function CampeonesPage() {
-  const [tab, setTab]   = useState<"ediciones" | "palmares">("ediciones");
-  const [conf, setConf] = useState<"all" | "CONMEBOL" | "UEFA">("all");
+  const [tab, setTab]     = useState<"ediciones" | "palmares">("ediciones");
+  const [conf, setConf]   = useState<"all" | "CONMEBOL" | "UEFA">("all");
   const [decade, setDecade] = useState<string>("Todos");
+  const [champion2026, setChampion2026] = useState<Champion | null>(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase
+      .from("champion_2026")
+      .select("*")
+      .limit(1)
+      .then(({ data }) => {
+        if (!data || data.length === 0) return;
+        const row = data[0];
+        const team = WC_TEAMS.find((t) => t.code === row.winner_code);
+        setChampion2026({
+          year: 2026,
+          host: "EE. UU. / Canadá / México",
+          winner: {
+            name: team?.name ?? row.winner_name,
+            flag: team?.flag ?? "🏳️",
+            conf: row.conf as "CONMEBOL" | "UEFA",
+          },
+          runnerUp: WC_TEAMS.find((t) => t.code === row.runner_up_code)?.name ?? row.runner_up_name,
+          score: row.score,
+        });
+      });
+  }, []);
+
+  const allChampions = useMemo(() => {
+    return champion2026 ? [champion2026, ...CHAMPIONS] : CHAMPIONS;
+  }, [champion2026]);
 
   const filtered = useMemo(() => {
-    return CHAMPIONS.filter((c) => {
+    return allChampions.filter((c) => {
       if (conf !== "all" && c.winner.conf !== conf) return false;
       if (decade !== "Todos") {
         const d = parseInt(decade);
@@ -31,7 +62,7 @@ export default function CampeonesPage() {
       }
       return true;
     });
-  }, [conf, decade]);
+  }, [allChampions, conf, decade]);
 
   return (
     <div className="flex flex-col h-screen max-w-md mx-auto" style={{ background: "#090B19" }}>
@@ -68,10 +99,9 @@ export default function CampeonesPage() {
         ))}
       </div>
 
-      {/* Filters — only on Ediciones tab */}
+      {/* Filters — solo en Ediciones */}
       {tab === "ediciones" && (
         <div className="flex-shrink-0 px-4 pt-3 pb-2 flex flex-col gap-2" style={{ background: "#090B19" }}>
-          {/* Confederación */}
           <div className="flex gap-2">
             {CONF_FILTERS.map(({ key, label }) => (
               <button
@@ -89,7 +119,6 @@ export default function CampeonesPage() {
               </button>
             ))}
           </div>
-          {/* Década */}
           <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
             {DECADES.map((d) => (
               <button
@@ -123,7 +152,12 @@ export default function CampeonesPage() {
               <div
                 key={c.year}
                 className="rounded-2xl p-4 mb-2.5"
-                style={{ background: "#0F1228", border: "1px solid rgba(255,255,255,0.07)" }}
+                style={{
+                  background: c.year === 2026 ? "rgba(249,115,22,0.06)" : "#0F1228",
+                  border: c.year === 2026
+                    ? "1px solid rgba(249,115,22,0.3)"
+                    : "1px solid rgba(255,255,255,0.07)",
+                }}
               >
                 <div className="flex items-start justify-between mb-1">
                   <div style={{ fontFamily: "var(--font-display)" }} className="text-[28px] font-black text-atlas-primary tracking-tight leading-none">
