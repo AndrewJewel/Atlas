@@ -1,9 +1,10 @@
 "use client";
 export const dynamic = "force-dynamic";
 import { useState, useMemo, useEffect } from "react";
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import { CHAMPIONS, PALMARES, WC_TEAMS } from "@/lib/data";
-import { createClient } from "@/lib/supabase/client";
+import { supabase } from "@/lib/supabase";
 import type { Champion } from "@/lib/types";
 
 const TABS = [
@@ -17,7 +18,7 @@ const CONF_FILTERS = [
   { key: "UEFA",     label: "UEFA" },
 ] as const;
 
-const selectStyle: React.CSSProperties = {
+const selectStyle: CSSProperties = {
   background: "#0F1228",
   border: "1px solid rgba(255,255,255,0.10)",
   color: "#EDF0FF",
@@ -43,7 +44,6 @@ export default function CampeonesPage() {
   const [champion2026, setChampion2026] = useState<Champion | null>(null);
 
   useEffect(() => {
-    const supabase = createClient();
     supabase
       .from("champion_2026")
       .select("*")
