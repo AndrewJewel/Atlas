@@ -3,7 +3,7 @@ import Image from "next/image";
 export function AppHeader({ title }: { title?: string }) {
   return (
     <header
-      className="flex items-center gap-2.5 px-4 pb-3 flex-shrink-0 z-10"
+      className="flex items-center gap-2.5 px-4 pt-3 pb-3 flex-shrink-0 z-10"
       style={{
         background: "#0F1228",
         borderBottom: "1px solid rgba(255,255,255,0.06)",
