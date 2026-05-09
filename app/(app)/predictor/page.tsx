@@ -69,13 +69,19 @@ export default function PredictorPage() {
     if (tab !== "ranking") return;
     setLoadingRank(true);
     const fetch = async () => {
-      const [g, grps] = await Promise.all([
-        activeGroup === "global" ? getGlobalRanking() : getGroupRanking(activeGroup),
-        getUserGroups(),
-      ]);
-      setRanking(g);
-      setGroups(grps);
-      setLoadingRank(false);
+      try {
+        const [g, grps] = await Promise.all([
+          activeGroup === "global" ? getGlobalRanking() : getGroupRanking(activeGroup),
+          getUserGroups(),
+        ]);
+        setRanking(g);
+        setGroups(grps);
+      } catch {
+        setRanking([]);
+        setGroups([]);
+      } finally {
+        setLoadingRank(false);
+      }
     };
     fetch();
   }, [tab, activeGroup]);

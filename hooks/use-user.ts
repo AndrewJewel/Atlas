@@ -58,7 +58,9 @@ export function useUser() {
       setLoaded(true);
     }
 
-    supabase.auth.getSession().then(({ data: { session } }) => sync(session));
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => sync(session))
+      .catch(() => { if (active) setLoaded(true); });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => sync(session)

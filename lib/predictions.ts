@@ -97,14 +97,28 @@ export async function getGroupRanking(groupId: string): Promise<RankingEntry[]> 
 }
 
 export async function getUserGroups(): Promise<UserGroup[]> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return [];
-  const { data, error } = await supabase
-    .from("group_members")
-    .select("group_id, groups(id, name)")
-    .eq("user_id", user.id);
-  if (error || !data) return [];
-  return (data as { groups: { id: string; name: string } }[])
-    .map((row) => ({ id: row.groups.id, name: row.groups.name }))
-    .filter(Boolean);
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return [];
+
+    // Primero obtenemos los group_ids del usuario
+    const { data: members, error: me } = await supabase
+      .from("group_members")
+      .select("group_id")
+      .eq("user_id", user.id);
+    if (me || !members || members.length === 0) return [];
+
+    const groupIds = members.map((m: { group_id: string }) => m.group_id);
+
+    // Luego buscamos los nombres de esos grupos
+    const { data: grps, error: ge } = await supabase
+      .from("groups")
+      .select("id, name")
+      .in("id", groupIds);
+    if (ge || !grps) return [];
+
+    return (grps as { id: string; name: string }[]).map((g) => ({ id: g.id, name: g.name }));
+  } catch {
+    return [];
+  }
 }
