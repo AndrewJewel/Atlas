@@ -7,7 +7,7 @@ import { useUser } from "@/hooks/use-user";
 import { useMatchNotifications } from "@/hooks/use-match-notifications";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { user, authSession, loaded } = useUser();
+  const { user, authSession, loaded, profileLoaded } = useUser();
   const router = useRouter();
 
   useMatchNotifications(user?.team);
@@ -19,22 +19,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!loaded) return;
-    // Solo redirigir cuando hay certeza de que no hay sesión activa
+    // Solo redirigir cuando auth Y perfil están completamente cargados
+    if (!profileLoaded) return;
     if (!authSession) { router.replace("/"); return; }
-    // Sesión existe pero perfil incompleto → onboarding
-    if (loaded && authSession && !user) { router.replace("/"); return; }
-  }, [loaded, user, authSession, router]);
+    if (!user) { router.replace("/"); return; }
+  }, [profileLoaded, user, authSession, router]);
 
-  // Cargando auth (no sabemos si hay sesión todavía)
-  if (!loaded) return (
-    <div className="bg-atlas-bg min-h-screen flex items-center justify-center">
-      <div className="w-8 h-8 rounded-full border-2 border-atlas-primary border-t-transparent animate-spin" />
-    </div>
-  );
-
-  // Sesión confirmada pero perfil aún cargando
-  if (!user) return (
+  // Mostrar spinner mientras carga auth o perfil
+  if (!profileLoaded || !user) return (
     <div className="bg-atlas-bg min-h-screen flex items-center justify-center">
       <div className="w-8 h-8 rounded-full border-2 border-atlas-primary border-t-transparent animate-spin" />
     </div>
