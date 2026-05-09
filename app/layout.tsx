@@ -22,6 +22,7 @@ export const metadata: Metadata = {
   description: "Chat · Polla · Álbum Panini · Atlas IA. El Mundial en tu grupo.",
   manifest: "/manifest.json",
   icons: {
+    icon: "/atlas-favicon.png",
     apple: "/atlas-favicon.png",
   },
 };
