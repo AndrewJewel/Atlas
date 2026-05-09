@@ -45,7 +45,7 @@ export interface Match {
 export interface Champion {
   year: number;
   host: string;
-  winner: { name: string; flag: string };
+  winner: { name: string; flag: string; conf: "CONMEBOL" | "UEFA" };
   runnerUp: string;
   score: string;
 }
