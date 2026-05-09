@@ -234,7 +234,7 @@ export default function GruposPage() {
             className="grid px-3.5 py-2.5"
             style={{ gridTemplateColumns: "24px minmax(0,1fr) repeat(8, 22px)", borderBottom: "1px solid rgba(255,255,255,0.06)", gap: 2 }}
           >
-            {["#", "Club", "PJ", "G", "E", "P", "GF", "GC", "DG", "Pts"].map((h, i) => (
+            {["#", "Selección", "PJ", "G", "E", "P", "GF", "GC", "DG", "Pts"].map((h, i) => (
               <span key={i} className="text-[9px] font-bold text-atlas-dimmed" style={{ textAlign: i === 0 || i > 1 ? "center" : "left" }}>
                 {h}
               </span>
