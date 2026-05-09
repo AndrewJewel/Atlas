@@ -129,7 +129,7 @@ export default function PredictorPage() {
 
   return (
     <div className="flex flex-col flex-1">
-      <AppHeader title="Quiniela / Prode" />
+      <AppHeader title="Juego de predicción" />
 
       {/* Stats Bar */}
       <div
