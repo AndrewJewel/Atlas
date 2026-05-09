@@ -51,19 +51,18 @@ export function useUser() {
         setLoaded(true);
         return;
       }
+      // Confirmar sesión inmediatamente — no esperar el perfil
+      setAuthSession(session);
+      setLoaded(true);
+      // Cargar perfil en segundo plano
       const profile = await fetchProfile(session.user.id);
       if (!active) return;
-      setAuthSession(session);
       setUser(profile);
-      setLoaded(true);
     }
 
-    // Timeout de seguridad: si Supabase no responde en 6s, forzar loaded=true
-    const timeout = setTimeout(() => { if (active) setLoaded(true); }, 6000);
-
     supabase.auth.getSession()
-      .then(({ data: { session } }) => { clearTimeout(timeout); sync(session); })
-      .catch(() => { clearTimeout(timeout); if (active) setLoaded(true); });
+      .then(({ data: { session } }) => sync(session))
+      .catch(() => { if (active) setLoaded(true); });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => sync(session)

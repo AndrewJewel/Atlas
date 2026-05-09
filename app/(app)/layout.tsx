@@ -20,13 +20,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!loaded) return;
-    // Sin sesión → login
+    // Solo redirigir cuando hay certeza de que no hay sesión activa
     if (!authSession) { router.replace("/"); return; }
-    // Sesión pero sin perfil → completar onboarding
-    if (!user) { router.replace("/"); return; }
+    // Sesión existe pero perfil incompleto → onboarding
+    if (loaded && authSession && !user) { router.replace("/"); return; }
   }, [loaded, user, authSession, router]);
 
-  if (!loaded || !user) return (
+  // Cargando auth (no sabemos si hay sesión todavía)
+  if (!loaded) return (
+    <div className="bg-atlas-bg min-h-screen flex items-center justify-center">
+      <div className="w-8 h-8 rounded-full border-2 border-atlas-primary border-t-transparent animate-spin" />
+    </div>
+  );
+
+  // Sesión confirmada pero perfil aún cargando
+  if (!user) return (
     <div className="bg-atlas-bg min-h-screen flex items-center justify-center">
       <div className="w-8 h-8 rounded-full border-2 border-atlas-primary border-t-transparent animate-spin" />
     </div>
