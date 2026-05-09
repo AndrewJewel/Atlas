@@ -17,12 +17,29 @@ const CONF_FILTERS = [
   { key: "UEFA",     label: "UEFA" },
 ] as const;
 
-const DECADES = ["Todos", "1930", "1950", "1960", "1970", "1980", "1990", "2000", "2010", "2020"] as const;
+const selectStyle: React.CSSProperties = {
+  background: "#0F1228",
+  border: "1px solid rgba(255,255,255,0.10)",
+  color: "#EDF0FF",
+  borderRadius: 10,
+  padding: "6px 10px",
+  fontSize: 12,
+  fontWeight: 700,
+  appearance: "none",
+  WebkitAppearance: "none",
+  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238892B0' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
+  backgroundRepeat: "no-repeat",
+  backgroundPosition: "right 10px center",
+  paddingRight: 28,
+  cursor: "pointer",
+  width: "100%",
+};
 
 export default function CampeonesPage() {
-  const [tab, setTab]     = useState<"ediciones" | "palmares">("ediciones");
-  const [conf, setConf]   = useState<"all" | "CONMEBOL" | "UEFA">("all");
-  const [decade, setDecade] = useState<string>("Todos");
+  const [tab, setTab]       = useState<"ediciones" | "palmares">("ediciones");
+  const [conf, setConf]     = useState<"all" | "CONMEBOL" | "UEFA">("all");
+  const [decade, setDecade] = useState<string>("all");
+  const [country, setCountry] = useState<string>("all");
   const [champion2026, setChampion2026] = useState<Champion | null>(null);
 
   useEffect(() => {
@@ -53,16 +70,30 @@ export default function CampeonesPage() {
     return champion2026 ? [champion2026, ...CHAMPIONS] : CHAMPIONS;
   }, [champion2026]);
 
+  // Lista única de países ganadores para el selector
+  const countries = useMemo(() => {
+    const seen = new Map<string, string>();
+    allChampions.forEach((c) => {
+      if (!seen.has(c.winner.name)) seen.set(c.winner.name, c.winner.flag);
+    });
+    return Array.from(seen.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [allChampions]);
+
+  // Décadas disponibles
+  const decades = useMemo(() => {
+    const ds = new Set<number>();
+    allChampions.forEach((c) => ds.add(Math.floor(c.year / 10) * 10));
+    return Array.from(ds).sort((a, b) => a - b);
+  }, [allChampions]);
+
   const filtered = useMemo(() => {
     return allChampions.filter((c) => {
       if (conf !== "all" && c.winner.conf !== conf) return false;
-      if (decade !== "Todos") {
-        const d = parseInt(decade);
-        if (c.year < d || c.year >= d + 10) return false;
-      }
+      if (decade !== "all" && Math.floor(c.year / 10) * 10 !== parseInt(decade)) return false;
+      if (country !== "all" && c.winner.name !== country) return false;
       return true;
     });
-  }, [allChampions, conf, decade]);
+  }, [allChampions, conf, decade, country]);
 
   return (
     <div className="flex flex-col h-screen max-w-md mx-auto" style={{ background: "#090B19" }}>
@@ -101,7 +132,8 @@ export default function CampeonesPage() {
 
       {/* Filters — solo en Ediciones */}
       {tab === "ediciones" && (
-        <div className="flex-shrink-0 px-4 pt-3 pb-2 flex flex-col gap-2" style={{ background: "#090B19" }}>
+        <div className="flex-shrink-0 px-4 pt-3 pb-2.5 flex flex-col gap-2.5" style={{ background: "#090B19" }}>
+          {/* Confederación — chips */}
           <div className="flex gap-2">
             {CONF_FILTERS.map(({ key, label }) => (
               <button
@@ -119,22 +151,33 @@ export default function CampeonesPage() {
               </button>
             ))}
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-            {DECADES.map((d) => (
-              <button
-                key={d}
-                onClick={() => setDecade(d)}
-                className="flex-shrink-0 px-3 py-1.5 rounded-full text-[11px] font-bold tracking-wide transition-all"
-                style={{
-                  background: decade === d ? "#181B30" : "transparent",
-                  border: `1px solid ${decade === d ? "#F97316" : "rgba(255,255,255,0.08)"}`,
-                  color: decade === d ? "#F97316" : "#8892B0",
-                  fontFamily: "var(--font-display)",
-                }}
+
+          {/* Década + País — dropdowns en fila */}
+          <div className="flex gap-2">
+            <div className="flex-1 relative">
+              <select
+                value={decade}
+                onChange={(e) => setDecade(e.target.value)}
+                style={{ ...selectStyle, fontFamily: "var(--font-display)" }}
               >
-                {d === "Todos" ? d : `${d}s`}
-              </button>
-            ))}
+                <option value="all">Todas las décadas</option>
+                {decades.map((d) => (
+                  <option key={d} value={String(d)}>{d}s</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex-1 relative">
+              <select
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                style={{ ...selectStyle, fontFamily: "var(--font-display)" }}
+              >
+                <option value="all">Todos los países</option>
+                {countries.map(([name, flag]) => (
+                  <option key={name} value={name}>{flag} {name}</option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
       )}
