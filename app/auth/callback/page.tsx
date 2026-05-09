@@ -2,31 +2,43 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-// EmailOtpType: 'signup' | 'magiclink' | 'recovery' | 'invite' | 'email'
+
 type EmailOtpType = "signup" | "recovery" | "email" | "magiclink" | "invite";
 
-// Maneja dos tipos de callback:
-//   1. Google OAuth (PKCE): ?code=XXX
-//   2. Confirmación de email: ?token_hash=XXX&type=email|signup|recovery
+// detectSessionInUrl:true in supabase.ts handles PKCE code exchange automatically.
+// This page only needs to:
+//   - For Google OAuth (?code=): wait for onAuthStateChange then redirect.
+//   - For email OTP (?token_hash=): call verifyOtp manually then redirect.
 export default function AuthCallback() {
   const router = useRouter();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const code = params.get("code");
     const tokenHash = params.get("token_hash");
     const type = params.get("type") as EmailOtpType | null;
 
-    async function handle() {
-      if (code) {
-        await supabase.auth.exchangeCodeForSession(code);
-      } else if (tokenHash && type) {
-        await supabase.auth.verifyOtp({ token_hash: tokenHash, type });
-      }
-      router.replace("/");
+    // Email OTP path — not auto-handled by detectSessionInUrl
+    if (tokenHash && type) {
+      supabase.auth.verifyOtp({ token_hash: tokenHash, type })
+        .finally(() => router.replace("/"));
+      return;
     }
 
-    handle();
+    // Google OAuth path — detectSessionInUrl already exchanged the code.
+    // Subscribe to get SIGNED_IN or INITIAL_SESSION (with session) and redirect.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" || (event === "INITIAL_SESSION" && session)) {
+        router.replace("/");
+      }
+    });
+
+    // Fallback: if auth never resolves (e.g. invalid code), redirect after 8s
+    const fallback = setTimeout(() => router.replace("/"), 8_000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(fallback);
+    };
   }, [router]);
 
   return (
