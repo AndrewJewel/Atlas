@@ -26,7 +26,6 @@ const TABS = [
   { key: "pending",  label: "Pendientes" },
   { key: "done",     label: "Finalizados" },
   { key: "ranking",  label: "Ranking" },
-  { key: "logros",   label: "Mis Logros" },
 ] as const;
 type Tab = typeof TABS[number]["key"];
 
@@ -47,54 +46,6 @@ function levelFromPoints(pts: number): string {
   return "Aficionado";
 }
 
-// ── Logros ──────────────────────────────────────────────────────────────────
-const LOGROS = [
-  {
-    key: "first",
-    emoji: "🎯",
-    title: "Primeros pasos",
-    desc: "Guarda tu primera predicción",
-    check: (preds: SavedPrediction[]) => preds.length >= 1,
-  },
-  {
-    key: "exact",
-    emoji: "🔮",
-    title: "Vidente",
-    desc: "Acierta un marcador exacto (3 pts)",
-    check: (preds: SavedPrediction[]) => preds.some((p) => p.points_earned === 3),
-  },
-  {
-    key: "streak",
-    emoji: "🔥",
-    title: "En racha",
-    desc: "3 predicciones correctas seguidas",
-    check: (preds: SavedPrediction[]) => {
-      const scored = preds.filter((p) => p.points_earned !== null);
-      let streak = 0;
-      for (const p of scored) {
-        if ((p.points_earned ?? 0) > 0) { streak++; if (streak >= 3) return true; }
-        else streak = 0;
-      }
-      return false;
-    },
-  },
-  {
-    key: "group",
-    emoji: "🏅",
-    title: "Experto del grupo",
-    desc: "Acierta todos los partidos de un grupo del Mundial",
-    check: (preds: SavedPrediction[]) => {
-      const groups = [...new Set(MATCHES.map((m) => m.group))];
-      return groups.some((g) => {
-        const groupMatches = MATCHES.filter((m) => m.group === g);
-        return groupMatches.every((m) => {
-          const p = preds.find((pr) => pr.match_id === m.id);
-          return p && (p.points_earned ?? 0) > 0;
-        });
-      });
-    },
-  },
-];
 
 export default function PredictorPage() {
   const { user } = useUser();
@@ -464,37 +415,6 @@ export default function PredictorPage() {
                 })}
               </div>
             )}
-          </div>
-        )}
-
-        {/* ── MIS LOGROS ── */}
-        {tab === "logros" && (
-          <div className="px-4 pt-3 pb-4 flex flex-col gap-3">
-            {LOGROS.map((logro) => {
-              const unlocked = logro.check(preds);
-              return (
-                <div
-                  key={logro.key}
-                  className="flex items-center gap-4 p-4 rounded-[18px]"
-                  style={{
-                    background: unlocked ? "rgba(249,115,22,0.08)" : "rgba(255,255,255,0.03)",
-                    border: `1px solid ${unlocked ? "rgba(249,115,22,0.25)" : "rgba(255,255,255,0.06)"}`,
-                    opacity: unlocked ? 1 : 0.5,
-                  }}
-                >
-                  <span className="text-[36px]">{logro.emoji}</span>
-                  <div className="flex flex-col">
-                    <span className="text-[14px] font-bold text-atlas-text">{logro.title}</span>
-                    <span className="text-[12px] text-atlas-muted">{logro.desc}</span>
-                  </div>
-                  {unlocked && (
-                    <span className="ml-auto text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(34,197,94,0.15)", color: "#22C55E" }}>
-                      ✓ Desbloqueado
-                    </span>
-                  )}
-                </div>
-              );
-            })}
           </div>
         )}
 
