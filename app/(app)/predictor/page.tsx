@@ -24,9 +24,8 @@ const DAY_LABEL: Record<string, string> = {
 };
 
 const TABS = [
-  { key: "pending",  label: "Pendientes" },
-  { key: "done",     label: "Finalizados" },
-  { key: "ranking",  label: "Ranking" },
+  { key: "pending", label: "Pendientes" },
+  { key: "ranking", label: "Ranking" },
 ] as const;
 type Tab = typeof TABS[number]["key"];
 
@@ -93,10 +92,7 @@ export default function PredictorPage() {
   const predicted = preds.length;
   const level = levelFromPoints(totalPoints);
 
-  // Pending = not locked by time AND no saved prediction yet
-  // Done = match locked AND prediction exists
   const pendingMatches = MATCHES.filter((m) => !isMatchLocked(m) && !predMap.has(m.id));
-  const doneMatches = MATCHES.filter((m) => predMap.has(m.id));
 
   const updateScore = (matchId: number, side: "home" | "away", raw: string) => {
     const val = raw.replace(/\D/g, "").slice(0, 2);
@@ -279,79 +275,6 @@ export default function PredictorPage() {
                   >
                     {saving === m.id ? "Guardando…" : "Guardar Marcador"}
                   </button>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* ── FINALIZADOS ── */}
-        {tab === "done" && (
-          <div className="px-4 pt-3 pb-4 flex flex-col gap-3">
-            {doneMatches.length === 0 && (
-              <div className="flex flex-col items-center justify-center gap-4 p-8 min-h-[300px]">
-                <span className="text-[48px]">⏳</span>
-                <span className="text-[14px] text-atlas-muted text-center">
-                  Aún no has guardado predicciones.
-                </span>
-              </div>
-            )}
-            {doneMatches.map((m) => {
-              const p = predMap.get(m.id)!;
-              const winnerName =
-                p.predicted_winner === "home" ? m.home.name :
-                p.predicted_winner === "away" ? m.away.name : "Empate";
-              const pts = p.points_earned;
-              const scoreStr =
-                p.home_score !== null && p.away_score !== null
-                  ? `${p.home_score}–${p.away_score}`
-                  : null;
-              return (
-                <div
-                  key={m.id}
-                  className="rounded-[18px] p-4"
-                  style={{
-                    background: "rgba(255,255,255,0.03)",
-                    border: "1px solid rgba(255,255,255,0.07)",
-                  }}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span
-                      className="text-[10px] font-bold tracking-widest text-atlas-primary"
-                      style={{ fontFamily: "var(--font-display)" }}
-                    >
-                      {DAY_LABEL[m.date] ?? m.date}
-                    </span>
-                    {pts !== null && (
-                      <span
-                        className="text-[12px] font-bold px-2.5 py-0.5 rounded-full"
-                        style={{
-                          background: pts === 3 ? "rgba(34,197,94,0.15)" : pts === 1 ? "rgba(249,115,22,0.15)" : "rgba(255,255,255,0.05)",
-                          color: pts === 3 ? "#22C55E" : pts === 1 ? "#F97316" : "#4A5178",
-                        }}
-                      >
-                        {pts === 3 ? "🎯 +3 pts" : pts === 1 ? "✅ +1 pt" : "❌ 0 pts"}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-3 mb-1.5">
-                    <TeamFlag code={m.home.code} size="xs" shape="rounded" />
-                    <span className="flex-1 text-[14px] text-atlas-text">{m.home.name}</span>
-                  </div>
-                  <div className="flex items-center gap-3 mb-2.5">
-                    <TeamFlag code={m.away.code} size="xs" shape="rounded" />
-                    <span className="flex-1 text-[14px] text-atlas-text">{m.away.name}</span>
-                  </div>
-                  <div
-                    className="flex items-center justify-center gap-2 py-2 rounded-xl"
-                    style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.15)" }}
-                  >
-                    <span className="text-[13px]">🔒</span>
-                    <span className="text-[12px] font-semibold" style={{ color: "#22C55E" }}>
-                      {winnerName}{scoreStr ? ` · ${scoreStr}` : ""}
-                      {pts === null ? " · Esperando resultado" : ""}
-                    </span>
-                  </div>
                 </div>
               );
             })}
