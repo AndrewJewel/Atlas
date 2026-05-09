@@ -13,7 +13,11 @@ export default function RootPage() {
     if (loaded && user) router.replace("/partidos");
   }, [loaded, user, router]);
 
-  if (!loaded) return <div className="flex-1 bg-atlas-bg" />;
+  if (!loaded) return (
+    <div className="min-h-screen bg-atlas-bg flex items-center justify-center">
+      <div className="w-8 h-8 rounded-full border-2 border-atlas-primary border-t-transparent animate-spin" />
+    </div>
+  );
   if (user) return <div className="flex-1 bg-atlas-bg" />;
 
   // authSession existe pero sin perfil → viene de Google OAuth

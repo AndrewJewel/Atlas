@@ -26,7 +26,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (!user) { router.replace("/"); return; }
   }, [loaded, user, authSession, router]);
 
-  if (!loaded || !user) return <div className="bg-atlas-bg min-h-screen" />;
+  if (!loaded || !user) return (
+    <div className="bg-atlas-bg min-h-screen flex items-center justify-center">
+      <div className="w-8 h-8 rounded-full border-2 border-atlas-primary border-t-transparent animate-spin" />
+    </div>
+  );
 
   return (
     <div className="flex flex-col min-h-screen max-w-md mx-auto bg-atlas-bg relative">
