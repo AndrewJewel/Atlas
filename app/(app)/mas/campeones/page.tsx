@@ -70,11 +70,16 @@ export default function CampeonesPage() {
     return champion2026 ? [champion2026, ...CHAMPIONS] : CHAMPIONS;
   }, [champion2026]);
 
+  // Normaliza "Alemania Occ." → "Alemania" para filtros y dropdown
+  const normalizeCountry = (name: string) =>
+    name === "Alemania Occ." ? "Alemania" : name;
+
   // Lista única de países ganadores para el selector
   const countries = useMemo(() => {
     const seen = new Map<string, string>();
     allChampions.forEach((c) => {
-      if (!seen.has(c.winner.name)) seen.set(c.winner.name, c.winner.flag);
+      const name = normalizeCountry(c.winner.name);
+      if (!seen.has(name)) seen.set(name, c.winner.flag);
     });
     return Array.from(seen.entries()).sort((a, b) => a[0].localeCompare(b[0]));
   }, [allChampions]);
@@ -90,13 +95,13 @@ export default function CampeonesPage() {
     return allChampions.filter((c) => {
       if (conf !== "all" && c.winner.conf !== conf) return false;
       if (decade !== "all" && Math.floor(c.year / 10) * 10 !== parseInt(decade)) return false;
-      if (country !== "all" && c.winner.name !== country) return false;
+      if (country !== "all" && normalizeCountry(c.winner.name) !== country) return false;
       return true;
     });
   }, [allChampions, conf, decade, country]);
 
   return (
-    <div className="flex flex-col h-screen max-w-md mx-auto" style={{ background: "#090B19" }}>
+    <div className="flex flex-col flex-1" style={{ background: "#090B19" }}>
       {/* Header */}
       <div
         className="flex items-center gap-3 px-4 pt-3 pb-3 flex-shrink-0"
