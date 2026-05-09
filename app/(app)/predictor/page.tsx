@@ -140,7 +140,7 @@ export default function PredictorPage() {
         {[
           { val: level,              key: "NIVEL",       color: "#EDF0FF" },
           null,
-          { val: `${predicted} ⚡`,  key: "PREDICHAS",   color: "#22C55E" },
+          { val: `${predicted}`,     key: "PREDICHAS",   color: "#22C55E" },
           null,
           { val: `${totalPoints}`,   key: "MIS PUNTOS",  color: "#F97316" },
         ].map((item, i) =>
