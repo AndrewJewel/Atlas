@@ -211,7 +211,7 @@ export function AtlasWidget({ user }: { user: User }) {
                 {m.role === "atlas" && (
                   <div style={{ width: 26, height: 26, overflow: "hidden", flexShrink: 0, borderRadius: 8 }}>
                     <div style={{ transform: "scale(0.325)", transformOrigin: "top left", width: 80, height: 80 }}>
-                      <AgentAvatar size={80} status="idle" name={`atlas-msg-${i}`} />
+                      <AgentAvatar size={80} status="idle" name={`atlas-msg-${i}`} variant="soccer" />
                     </div>
                   </div>
                 )}
@@ -239,7 +239,7 @@ export function AtlasWidget({ user }: { user: User }) {
               <div className="flex gap-1.5 items-end justify-start">
                 <div style={{ width: 26, height: 26, overflow: "hidden", flexShrink: 0, borderRadius: 8 }}>
                   <div style={{ transform: "scale(0.325)", transformOrigin: "top left", width: 80, height: 80 }}>
-                    <AgentAvatar size={80} status="thinking" name="atlas-widget-typing" />
+                    <AgentAvatar size={80} status="thinking" name="atlas-widget-typing" variant="soccer" />
                   </div>
                 </div>
                 <div className="px-3 py-2 rounded-[16px_16px_16px_4px] flex gap-1 items-center" style={{ background: "#1A1F33", border: "1px solid rgba(249,115,22,0.25)" }}>
