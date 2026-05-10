@@ -52,12 +52,32 @@ export default function IntercambiosPage() {
 
   const load = useCallback(async () => {
     if (!user) return;
+
+    // Get all user_ids that share at least one group with current user
+    const { data: myGroups } = await supabase
+      .from("group_members")
+      .select("group_id")
+      .eq("user_id", user.id);
+
+    const groupIds = (myGroups ?? []).map(m => m.group_id);
+    let groupUserIds: string[] = [user.id];
+
+    if (groupIds.length > 0) {
+      const { data: fellows } = await supabase
+        .from("group_members")
+        .select("user_id")
+        .in("group_id", groupIds);
+      groupUserIds = [...new Set((fellows ?? []).map(m => m.user_id))];
+      if (!groupUserIds.includes(user.id)) groupUserIds.push(user.id);
+    }
+
     const { data } = await supabase
       .from("trade_offers")
       .select(`id, from_user_id, from_username, to_username, offered_sticker_id, requested_sticker_id, status, created_at,
                offered:stickers!offered_sticker_id(code,name,team_code,team_name),
                requested:stickers!requested_sticker_id(code,name,team_code,team_name)`)
       .eq("status", "pending")
+      .in("from_user_id", groupUserIds)
       .order("created_at", { ascending: false });
     setTrades((data ?? []) as unknown as TradeRow[]);
     setLoading(false);
@@ -119,11 +139,11 @@ export default function IntercambiosPage() {
         <div className="flex-1 flex flex-col items-center justify-center gap-3 opacity-50">
           <span className="text-[40px]">🔁</span>
           <span className="text-[14px] text-atlas-muted">
-            {tab === "open" ? "No hay intercambios disponibles" : "No tienes ofertas activas"}
+            {tab === "open" ? "Nadie en tus grupos tiene intercambios activos" : "No tienes ofertas activas"}
           </span>
           {tab === "open" && (
-            <Link href="/mas/panini/repetidos" className="text-[13px] font-semibold text-atlas-primary">
-              Ofrece tus repetidos →
+            <Link href="/grupos" className="text-[13px] font-semibold text-atlas-primary">
+              Invita amigos a tu grupo →
             </Link>
           )}
         </div>
