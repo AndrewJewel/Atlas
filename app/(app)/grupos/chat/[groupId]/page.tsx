@@ -183,7 +183,7 @@ export default function ChatPage() {
                 isAtlas ? (
                   <div style={{ width: 30, height: 30, overflow: "hidden", flexShrink: 0, borderRadius: 9 }}>
                     <div style={{ transform: "scale(0.375)", transformOrigin: "top left", width: 80, height: 80 }}>
-                      <AgentAvatar size={80} status="idle" name={msg.id} />
+                      <AgentAvatar size={80} status="idle" name={String(msg.id)} />
                     </div>
                   </div>
                 ) : (
