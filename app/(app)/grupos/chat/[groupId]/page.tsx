@@ -7,6 +7,7 @@ import { useUser } from "@/hooks/use-user";
 import { useLanguage } from "@/contexts/language-context";
 import { supabase } from "@/lib/supabase";
 import type { Message, Avatar } from "@/lib/types";
+import AgentAvatar from "@/components/AgentAvatar";
 
 type DbRow = {
   id: string;
@@ -179,10 +180,18 @@ export default function ChatPage() {
           return (
             <div key={msg.id} className={`flex gap-2 items-end ${isMe ? "justify-end" : "justify-start"}`}>
               {!isMe && (
-                <div className="w-[30px] h-[30px] rounded-[9px] flex items-center justify-center text-[16px] flex-shrink-0"
-                  style={{ background: msg.avatar?.bg ?? "#333" }}>
-                  {msg.avatar?.emoji}
-                </div>
+                isAtlas ? (
+                  <div style={{ width: 30, height: 30, overflow: "hidden", flexShrink: 0, borderRadius: 9 }}>
+                    <div style={{ transform: "scale(0.375)", transformOrigin: "top left", width: 80, height: 80 }}>
+                      <AgentAvatar size={80} status="idle" name={msg.id} />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-[30px] h-[30px] rounded-[9px] flex items-center justify-center text-[16px] flex-shrink-0"
+                    style={{ background: msg.avatar?.bg ?? "#333" }}>
+                    {msg.avatar?.emoji}
+                  </div>
+                )
               )}
               <div style={{ maxWidth: "72%" }}>
                 {!isMe && (
@@ -211,7 +220,11 @@ export default function ChatPage() {
         })}
         {atlasTyping && (
           <div className="flex gap-2 items-end justify-start">
-            <div className="w-[30px] h-[30px] rounded-[9px] flex items-center justify-center text-[16px] flex-shrink-0" style={{ background: "#F97316" }}>🤖</div>
+            <div style={{ width: 30, height: 30, overflow: "hidden", flexShrink: 0, borderRadius: 9 }}>
+              <div style={{ transform: "scale(0.375)", transformOrigin: "top left", width: 80, height: 80 }}>
+                <AgentAvatar size={80} status="thinking" name="atlas-typing" />
+              </div>
+            </div>
             <div className="px-3.5 py-2.5 rounded-[18px_18px_18px_4px]" style={{ background: "var(--atlas-surface3)", border: "1px solid rgba(249,115,22,0.3)" }}>
               <div className="flex gap-1 items-center">
                 <span className="typing-dot" />
