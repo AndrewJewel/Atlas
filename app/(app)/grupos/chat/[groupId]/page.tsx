@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { useUser } from "@/hooks/use-user";
 import { useLanguage } from "@/contexts/language-context";
+import { usePush } from "@/hooks/use-push";
 import { supabase } from "@/lib/supabase";
 import type { Message, Avatar } from "@/lib/types";
 import AgentAvatar from "@/components/AgentAvatar";
@@ -43,6 +44,7 @@ export default function ChatPage() {
   const [showInfo, setShowInfo] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   const myId = user?.id ?? "";
+  const push = usePush();
 
   const scrollDown = () => {
     if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
@@ -102,6 +104,24 @@ export default function ChatPage() {
         const msg = rowToMessage(data as DbRow, myId);
         return prev.some((m) => m.id === msg.id) ? prev : [...prev, msg];
       });
+
+      // Fire-and-forget push notification to other group members
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (!session?.access_token) return;
+        fetch("/api/push/notify-message", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            groupId,
+            groupName,
+            senderName: user.username,
+            content: text,
+          }),
+        }).catch(() => { /* silent */ });
+      });
     }
 
     const mentionsAtlas =
@@ -150,6 +170,24 @@ export default function ChatPage() {
           </div>
           <div className="text-[12px] text-atlas-primary">{t("atlas_active")}</div>
         </div>
+        {push.status !== "unsupported" && (
+          <button
+            onClick={() => push.status === "subscribed" ? push.unsubscribe() : push.subscribe()}
+            disabled={push.busy || push.status === "denied"}
+            title={
+              push.status === "subscribed" ? "Notificaciones activas — toca para desactivar"
+              : push.status === "denied"   ? "Permiso bloqueado por el navegador"
+              : "Activar notificaciones de este chat"
+            }
+            className="text-[18px] mr-1 transition-opacity"
+            style={{
+              color: push.status === "subscribed" ? "#F97316" : "#8892B0",
+              opacity: push.busy ? 0.4 : 1,
+            }}
+          >
+            {push.status === "subscribed" ? "🔔" : "🔕"}
+          </button>
+        )}
         <button onClick={() => setShowInfo(!showInfo)} className="text-[22px] text-atlas-muted">⋯</button>
       </div>
 
