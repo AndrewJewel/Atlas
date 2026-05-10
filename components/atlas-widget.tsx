@@ -175,13 +175,17 @@ export function AtlasWidget({ user }: { user: User }) {
       {/* Chat Panel — pantalla completa */}
       {open && (
         <div
-          className="fixed inset-0 z-50 flex flex-col"
-          style={{ background: "var(--atlas-bg)" }}
+          style={{
+            position: "fixed", inset: 0, zIndex: 50,
+            display: "flex", flexDirection: "column",
+            height: "100dvh",
+            background: "var(--atlas-bg)",
+          }}
         >
           {/* Header */}
           <div
-            className="flex items-center justify-between px-4 py-3 flex-shrink-0"
-            style={{ background: "linear-gradient(135deg,#1A1F33,#141826)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}
+            className="flex items-center justify-between px-4 py-3"
+            style={{ flexShrink: 0, background: "linear-gradient(135deg,#1A1F33,#141826)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}
           >
             <div className="flex items-center gap-2.5">
               <div style={{ width: 38, height: 38, overflow: "hidden", flexShrink: 0, borderRadius: 11 }}>
@@ -209,7 +213,7 @@ export function AtlasWidget({ user }: { user: User }) {
           </div>
 
           {/* Messages */}
-          <div ref={listRef} className="flex-1 flex flex-col gap-2 p-3 overflow-y-auto">
+          <div ref={listRef} className="flex-1 flex flex-col gap-2 p-3 overflow-y-auto" style={{ minHeight: 0 }}>
             {messages.map((m, i) => (
               <div key={i} className={`flex gap-1.5 items-end ${m.role === "user" ? "justify-end" : "justify-start"}`}>
                 {m.role === "atlas" && (
