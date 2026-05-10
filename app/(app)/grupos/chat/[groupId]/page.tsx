@@ -171,7 +171,7 @@ export default function ChatPage() {
       )}
 
       {/* Messages */}
-      <div ref={listRef} className="flex-1 overflow-y-auto px-3 py-4 flex flex-col gap-2.5">
+      <div ref={listRef} className="flex-1 overflow-y-auto px-3 py-4 flex flex-col gap-2.5" style={{ minHeight: 0 }}>
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center flex-1 gap-2 opacity-40">
             <span className="text-[40px]">💬</span>
