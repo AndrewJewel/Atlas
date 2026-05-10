@@ -177,6 +177,76 @@ export async function getMatchGroupPredictions(
   }
 }
 
+export type GroupBet = {
+  id: string;
+  group_id: string;
+  match_id: number;
+  user_id: string;
+  home_score: number | null;
+  away_score: number | null;
+  predicted_winner: PredWinner;
+  points_earned: number | null;
+  created_at: string;
+};
+
+export type GroupMatchBetEntry = {
+  user_id: string;
+  username: string;
+  avatar: { emoji: string; bg: string };
+  bet: GroupBet | null;
+};
+
+export async function saveGroupBet(
+  userId: string,
+  groupId: string,
+  matchId: number,
+  homeScore: number | null,
+  awayScore: number | null,
+  predictedWinner: PredWinner
+): Promise<{ error: string | null }> {
+  const { error } = await supabase.from("group_match_bets").upsert(
+    { user_id: userId, group_id: groupId, match_id: matchId, home_score: homeScore, away_score: awayScore, predicted_winner: predictedWinner },
+    { onConflict: "group_id,match_id,user_id", ignoreDuplicates: false }
+  );
+  return { error: error?.message ?? null };
+}
+
+export async function getGroupMatchBets(
+  groupId: string,
+  matchId: number
+): Promise<GroupMatchBetEntry[]> {
+  try {
+    const { data: members } = await supabase
+      .from("group_members")
+      .select("user_id, username, avatar")
+      .eq("group_id", groupId);
+
+    if (!members?.length) return [];
+
+    const memberIds = (members as { user_id: string }[]).map((m) => m.user_id);
+
+    const { data: bets } = await supabase
+      .from("group_match_bets")
+      .select("id, group_id, match_id, user_id, home_score, away_score, predicted_winner, points_earned, created_at")
+      .eq("group_id", groupId)
+      .eq("match_id", matchId)
+      .in("user_id", memberIds);
+
+    const betByUser = new Map<string, GroupBet>(
+      ((bets ?? []) as GroupBet[]).map((b) => [b.user_id, b])
+    );
+
+    return (members as { user_id: string; username: string; avatar: { emoji: string; bg: string } }[]).map((m) => ({
+      user_id: m.user_id,
+      username: m.username,
+      avatar: m.avatar,
+      bet: betByUser.get(m.user_id) ?? null,
+    }));
+  } catch {
+    return [];
+  }
+}
+
 export async function getUserGroups(userId: string): Promise<UserGroup[]> {
   try {
     const { data: members, error: me } = await supabase

@@ -13,7 +13,8 @@ import {
   getGlobalRanking,
   getGroupRanking,
   getUserGroups,
-  getMatchGroupPredictions,
+  getGroupMatchBets,
+  saveGroupBet,
   getMatchLiveScore,
   calculatePoints,
   isMatchLocked,
@@ -21,7 +22,8 @@ import {
   type RankingEntry,
   type UserGroup,
   type PredWinner,
-  type MatchMemberPred,
+  type GroupMatchBetEntry,
+  type GroupBet,
   type LiveScore,
 } from "@/lib/predictions";
 
@@ -56,14 +58,14 @@ function deriveWinner(h: string, a: string): PredWinner | null {
   return "draw";
 }
 
-function effectivePoints(member: MatchMemberPred, live: LiveScore | null): number {
-  if (!member.pred) return -1;
-  if (member.pred.points_earned !== null) return member.pred.points_earned;
+function effectiveBetPoints(bet: GroupBet | null, live: LiveScore | null): number {
+  if (!bet) return -1;
+  if (bet.points_earned !== null) return bet.points_earned;
   if (live?.status === "finished") {
     return calculatePoints(
-      member.pred.predicted_winner,
-      member.pred.home_score,
-      member.pred.away_score,
+      bet.predicted_winner,
+      bet.home_score,
+      bet.away_score,
       live.home_score,
       live.away_score
     );
@@ -96,27 +98,29 @@ export default function PredictorPage() {
     return t("level_0");
   }
 
-  // ── Torneo state ──────────────────────────────────────
+  // ── Torneo ────────────────────────────────────────────
   const [preds, setPreds] = useState<SavedPrediction[]>([]);
   const [drafts, setDrafts] = useState<Record<number, Draft>>({});
   const [saving, setSaving] = useState<number | null>(null);
 
-  // ── Shared: groups ────────────────────────────────────
+  // ── Shared ────────────────────────────────────────────
   const [groups, setGroups] = useState<UserGroup[]>([]);
 
-  // ── Ranking state ─────────────────────────────────────
+  // ── Ranking ───────────────────────────────────────────
   const [ranking, setRanking] = useState<RankingEntry[]>([]);
   const [activeGroup, setActiveGroup] = useState<string>("global");
   const [loadingRank, setLoadingRank] = useState(false);
 
-  // ── Por partido state ─────────────────────────────────
+  // ── Por partido ───────────────────────────────────────
   const [ppGroupId, setPpGroupId] = useState<string>("");
   const [selectedMatchId, setSelectedMatchId] = useState<number | null>(null);
-  const [matchMembers, setMatchMembers] = useState<MatchMemberPred[]>([]);
-  const [loadingMembers, setLoadingMembers] = useState(false);
+  const [groupBets, setGroupBets] = useState<GroupMatchBetEntry[]>([]);
+  const [loadingBets, setLoadingBets] = useState(false);
   const [liveScore, setLiveScore] = useState<LiveScore | null>(null);
+  const [betDraft, setBetDraft] = useState<Draft>({ home: "", away: "", winner: null });
+  const [savingBet, setSavingBet] = useState(false);
 
-  // ── Pin state (localStorage) ──────────────────────────
+  // ── Pin (localStorage) ────────────────────────────────
   const [pinnedMatches, setPinnedMatches] = useState<Record<string, number[]>>({});
   const [groupPickerMatchId, setGroupPickerMatchId] = useState<number | null>(null);
 
@@ -142,19 +146,30 @@ export default function PredictorPage() {
     if (tab !== "ranking") return;
     setLoadingRank(true);
     (activeGroup === "global" ? getGlobalRanking() : getGroupRanking(activeGroup))
-      .then(setRanking)
-      .catch(() => setRanking([]))
+      .then(setRanking).catch(() => setRanking([]))
       .finally(() => setLoadingRank(false));
   }, [tab, activeGroup]);
 
+  // Load group bets when a match is expanded
   useEffect(() => {
-    if (!selectedMatchId || !ppGroupId) { setMatchMembers([]); return; }
-    setLoadingMembers(true);
-    getMatchGroupPredictions(selectedMatchId, ppGroupId)
-      .then(setMatchMembers)
-      .finally(() => setLoadingMembers(false));
-  }, [selectedMatchId, ppGroupId]);
+    if (!selectedMatchId || !ppGroupId) { setGroupBets([]); return; }
+    setLoadingBets(true);
+    getGroupMatchBets(ppGroupId, selectedMatchId).then((bets) => {
+      setGroupBets(bets);
+      const myBet = bets.find((b) => b.user_id === user?.id)?.bet;
+      setBetDraft(
+        myBet
+          ? {
+              home: myBet.home_score !== null ? String(myBet.home_score) : "",
+              away: myBet.away_score !== null ? String(myBet.away_score) : "",
+              winner: myBet.predicted_winner,
+            }
+          : { home: "", away: "", winner: null }
+      );
+    }).finally(() => setLoadingBets(false));
+  }, [selectedMatchId, ppGroupId, user?.id]);
 
+  // Load live score when a match is expanded
   useEffect(() => {
     if (!selectedMatchId) { setLiveScore(null); return; }
     const m = MATCHES.find((x) => x.id === selectedMatchId);
@@ -174,6 +189,7 @@ export default function PredictorPage() {
     });
   };
 
+  // Torneo helpers
   const predMap = new Map(preds.map((p) => [p.match_id, p]));
   const totalPoints = preds.reduce((s, p) => s + (p.points_earned ?? 0), 0);
   const predicted = preds.length;
@@ -185,10 +201,7 @@ export default function PredictorPage() {
     setDrafts((prev) => {
       const d = prev[matchId] ?? { home: "", away: "", winner: null };
       const next = { ...d, [side]: val };
-      next.winner = deriveWinner(
-        side === "home" ? val : d.home,
-        side === "away" ? val : d.away,
-      ) ?? next.winner;
+      next.winner = deriveWinner(side === "home" ? val : d.home, side === "away" ? val : d.away) ?? next.winner;
       return { ...prev, [matchId]: next };
     });
   };
@@ -203,17 +216,44 @@ export default function PredictorPage() {
 
   const handleSave = async (matchId: number) => {
     const d = drafts[matchId];
-    if (!d?.winner || saving !== null) return;
+    if (!d?.winner || saving !== null || !user?.id) return;
     setSaving(matchId);
     const hs = d.home !== "" ? parseInt(d.home) : null;
     const as_ = d.away !== "" ? parseInt(d.away) : null;
-    if (!user?.id) return;
     const { error } = await savePrediction(user.id, matchId, hs, as_, d.winner);
     if (!error) await load();
     setSaving(null);
   };
 
-  // Pinned matches sorted by date for Por partido tab
+  // Group bet helpers
+  const updateBetScore = (side: "home" | "away", raw: string) => {
+    const val = raw.replace(/\D/g, "").slice(0, 2);
+    setBetDraft((prev) => {
+      const next = { ...prev, [side]: val };
+      const derived = deriveWinner(side === "home" ? val : prev.home, side === "away" ? val : prev.away);
+      if (derived) next.winner = derived;
+      return next;
+    });
+  };
+
+  const toggleBetWinner = (w: PredWinner) => {
+    setBetDraft((prev) => ({ ...prev, winner: prev.winner === w ? null : w }));
+  };
+
+  const handleSaveBet = async (matchId: number) => {
+    if (!betDraft.winner || savingBet || !user?.id || !ppGroupId) return;
+    setSavingBet(true);
+    const hs = betDraft.home !== "" ? parseInt(betDraft.home) : null;
+    const as_ = betDraft.away !== "" ? parseInt(betDraft.away) : null;
+    const { error } = await saveGroupBet(user.id, ppGroupId, matchId, hs, as_, betDraft.winner);
+    if (!error) {
+      const bets = await getGroupMatchBets(ppGroupId, matchId);
+      setGroupBets(bets);
+    }
+    setSavingBet(false);
+  };
+
+  // Pinned matches for Por partido
   const pinnedMatchList = useMemo(() => {
     if (!ppGroupId) return [];
     const ids = new Set(pinnedMatches[ppGroupId] ?? []);
@@ -287,7 +327,6 @@ export default function PredictorPage() {
         ))}
       </div>
 
-      {/* Content */}
       <div className="flex-1 overflow-y-auto">
 
         {/* ── TORNEO ── */}
@@ -311,7 +350,7 @@ export default function PredictorPage() {
                   className="rounded-[18px] p-4"
                   style={{ background: "var(--atlas-surface)", border: "1px solid var(--atlas-border-card)" }}
                 >
-                  {/* Card header: date + pin button */}
+                  {/* Header: date + pin button */}
                   <div className="flex items-center justify-between mb-3">
                     <div
                       className="text-[10px] font-bold tracking-widest text-atlas-primary"
@@ -319,7 +358,6 @@ export default function PredictorPage() {
                     >
                       {formatMatchDay(m.date, locale)}
                     </div>
-
                     {groups.length > 0 && (
                       <button
                         onClick={() => setGroupPickerMatchId(isPickerOpen ? null : m.id)}
@@ -375,24 +413,22 @@ export default function PredictorPage() {
                       </span>
                     </button>
 
-                    <div className="flex flex-col items-center gap-1">
-                      <div className="flex items-center gap-1.5">
-                        <input
-                          type="number" min="0" max="20" placeholder="–"
-                          value={d.home}
-                          onChange={(e) => updateScore(m.id, "home", e.target.value)}
-                          className="w-9 h-9 text-center text-[16px] font-bold rounded-xl outline-none"
-                          style={{ background: "var(--atlas-surface2)", border: "1px solid var(--atlas-border-md)" }}
-                        />
-                        <span className="text-atlas-dimmed text-[18px] font-bold">:</span>
-                        <input
-                          type="number" min="0" max="20" placeholder="–"
-                          value={d.away}
-                          onChange={(e) => updateScore(m.id, "away", e.target.value)}
-                          className="w-9 h-9 text-center text-[16px] font-bold rounded-xl outline-none"
-                          style={{ background: "var(--atlas-surface2)", border: "1px solid var(--atlas-border-md)" }}
-                        />
-                      </div>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="number" min="0" max="20" placeholder="–"
+                        value={d.home}
+                        onChange={(e) => updateScore(m.id, "home", e.target.value)}
+                        className="w-9 h-9 text-center text-[16px] font-bold rounded-xl outline-none"
+                        style={{ background: "var(--atlas-surface2)", border: "1px solid var(--atlas-border-md)" }}
+                      />
+                      <span className="text-atlas-dimmed text-[18px] font-bold">:</span>
+                      <input
+                        type="number" min="0" max="20" placeholder="–"
+                        value={d.away}
+                        onChange={(e) => updateScore(m.id, "away", e.target.value)}
+                        className="w-9 h-9 text-center text-[16px] font-bold rounded-xl outline-none"
+                        style={{ background: "var(--atlas-surface2)", border: "1px solid var(--atlas-border-md)" }}
+                      />
                     </div>
 
                     <button
@@ -461,7 +497,7 @@ export default function PredictorPage() {
                   ))}
                 </div>
 
-                {/* Pinned matches list or empty state */}
+                {/* Pinned matches */}
                 {pinnedByDate.length === 0 ? (
                   <div className="flex flex-col items-center justify-center gap-4 p-8 min-h-[260px]">
                     <span className="text-[40px]">📌</span>
@@ -480,13 +516,16 @@ export default function PredictorPage() {
 
                         {dayMatches.map((m) => {
                           const isSelected = selectedMatchId === m.id;
-                          const hasPred = predMap.has(m.id);
                           const locked = isMatchLocked(m);
                           const badge = isSelected ? statusBadge(liveScore, locked) : null;
+                          const myBet = isSelected
+                            ? groupBets.find((b) => b.user_id === user?.id)?.bet ?? null
+                            : null;
+                          const canSaveBet = !!betDraft.winner && !savingBet && !locked;
 
-                          const sortedMembers = isSelected
-                            ? [...matchMembers].sort(
-                                (a, b) => effectivePoints(b, liveScore) - effectivePoints(a, liveScore)
+                          const sortedBets = isSelected
+                            ? [...groupBets].sort(
+                                (a, b) => effectiveBetPoints(b.bet, liveScore) - effectiveBetPoints(a.bet, liveScore)
                               )
                             : [];
 
@@ -496,7 +535,7 @@ export default function PredictorPage() {
 
                           return (
                             <div key={m.id} className="mb-1.5">
-                              {/* Match row + unpin button */}
+                              {/* Match row */}
                               <div className="flex items-center gap-1.5">
                                 <button
                                   onClick={() => setSelectedMatchId(isSelected ? null : m.id)}
@@ -508,21 +547,18 @@ export default function PredictorPage() {
                                 >
                                   <div className="flex items-center gap-1.5 flex-1 min-w-0">
                                     <TeamFlag code={m.home.code} size="sm" />
-                                    <span className="text-[12px] font-semibold text-atlas-text truncate">
-                                      {m.home.name}
-                                    </span>
+                                    <span className="text-[12px] font-semibold text-atlas-text truncate">{m.home.name}</span>
                                   </div>
                                   <span className="text-[10px] font-bold text-atlas-dimmed flex-shrink-0">vs</span>
                                   <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
-                                    <span className="text-[12px] font-semibold text-atlas-text truncate text-right">
-                                      {m.away.name}
-                                    </span>
+                                    <span className="text-[12px] font-semibold text-atlas-text truncate text-right">{m.away.name}</span>
                                     <TeamFlag code={m.away.code} size="sm" />
                                   </div>
+                                  {/* Bet indicator dot */}
                                   <div
                                     className="w-2 h-2 rounded-full flex-shrink-0 ml-1"
                                     style={{
-                                      background: hasPred
+                                      background: groupBets.find((b) => b.user_id === user?.id)?.bet
                                         ? "#22C55E"
                                         : locked
                                         ? "var(--atlas-glass-md)"
@@ -533,41 +569,26 @@ export default function PredictorPage() {
 
                                 {/* Unpin */}
                                 <button
-                                  onClick={() => {
-                                    togglePin(m.id, ppGroupId);
-                                    if (isSelected) setSelectedMatchId(null);
-                                  }}
-                                  className="w-8 h-8 flex items-center justify-center rounded-xl text-[18px] flex-shrink-0 transition-all"
-                                  style={{
-                                    background: "var(--atlas-glass-sm)",
-                                    border: "1px solid var(--atlas-glass-md)",
-                                    color: "#4A5178",
-                                  }}
+                                  onClick={() => { togglePin(m.id, ppGroupId); if (isSelected) setSelectedMatchId(null); }}
+                                  className="w-8 h-8 flex items-center justify-center rounded-xl text-[18px] flex-shrink-0"
+                                  style={{ background: "var(--atlas-glass-sm)", border: "1px solid var(--atlas-glass-md)", color: "#4A5178" }}
                                 >
                                   ×
                                 </button>
                               </div>
 
-                              {/* Expanded predictions panel */}
+                              {/* Expanded panel */}
                               {isSelected && (
                                 <div
                                   className="rounded-2xl mt-1 overflow-hidden"
-                                  style={{
-                                    background: "var(--atlas-surface)",
-                                    border: "1px solid var(--atlas-border-card)",
-                                  }}
+                                  style={{ background: "var(--atlas-surface)", border: "1px solid var(--atlas-border-card)" }}
                                 >
-                                  {/* Panel header */}
-                                  <div
-                                    className="px-4 py-3"
-                                    style={{ borderBottom: "1px solid var(--atlas-glass)" }}
-                                  >
+                                  {/* Match header */}
+                                  <div className="px-4 py-3" style={{ borderBottom: "1px solid var(--atlas-glass)" }}>
                                     <div className="flex items-center justify-between mb-2">
                                       <div className="flex items-center gap-2 flex-1 min-w-0">
                                         <TeamFlag code={m.home.code} size="sm" />
-                                        <span className="text-[13px] font-bold text-atlas-text truncate">
-                                          {m.home.name}
-                                        </span>
+                                        <span className="text-[13px] font-bold text-atlas-text truncate">{m.home.name}</span>
                                       </div>
                                       <div className="flex flex-col items-center flex-shrink-0 px-3">
                                         {liveScore && liveScore.status !== "scheduled" ? (
@@ -582,9 +603,7 @@ export default function PredictorPage() {
                                         )}
                                       </div>
                                       <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
-                                        <span className="text-[13px] font-bold text-atlas-text truncate text-right">
-                                          {m.away.name}
-                                        </span>
+                                        <span className="text-[13px] font-bold text-atlas-text truncate text-right">{m.away.name}</span>
                                         <TeamFlag code={m.away.code} size="sm" />
                                       </div>
                                     </div>
@@ -600,88 +619,153 @@ export default function PredictorPage() {
                                     )}
                                   </div>
 
-                                  {/* Members ranking */}
-                                  {loadingMembers ? (
+                                  {/* Inline bet form (only when not locked) */}
+                                  {!locked && (
+                                    <div className="px-4 py-3" style={{ borderBottom: "1px solid var(--atlas-glass)" }}>
+                                      {myBet && (
+                                        <div className="text-[10px] font-bold text-atlas-dimmed tracking-wide mb-2 text-center uppercase">
+                                          Tu apuesta · Editar
+                                        </div>
+                                      )}
+
+                                      {/* Score inputs */}
+                                      <div className="flex items-center justify-center gap-3 mb-2.5">
+                                        <button
+                                          onClick={() => toggleBetWinner("home")}
+                                          className="flex-1 flex flex-col items-center gap-1 py-2 px-1 rounded-xl transition-all"
+                                          style={{
+                                            background: betDraft.winner === "home" ? "rgba(249,115,22,0.15)" : "var(--atlas-glass-sm)",
+                                            border: `1.5px solid ${betDraft.winner === "home" ? "#F97316" : "var(--atlas-glass-md)"}`,
+                                          }}
+                                        >
+                                          <TeamFlag code={m.home.code} size="sm" />
+                                          <span className="text-[10px] font-semibold text-atlas-text leading-none text-center">{m.home.name}</span>
+                                        </button>
+
+                                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                                          <input
+                                            type="number" min="0" max="20" placeholder="–"
+                                            value={betDraft.home}
+                                            onChange={(e) => updateBetScore("home", e.target.value)}
+                                            className="w-9 h-9 text-center text-[16px] font-bold rounded-xl outline-none"
+                                            style={{ background: "var(--atlas-surface2)", border: "1px solid var(--atlas-border-md)" }}
+                                          />
+                                          <span className="text-atlas-dimmed text-[18px] font-bold">:</span>
+                                          <input
+                                            type="number" min="0" max="20" placeholder="–"
+                                            value={betDraft.away}
+                                            onChange={(e) => updateBetScore("away", e.target.value)}
+                                            className="w-9 h-9 text-center text-[16px] font-bold rounded-xl outline-none"
+                                            style={{ background: "var(--atlas-surface2)", border: "1px solid var(--atlas-border-md)" }}
+                                          />
+                                        </div>
+
+                                        <button
+                                          onClick={() => toggleBetWinner("away")}
+                                          className="flex-1 flex flex-col items-center gap-1 py-2 px-1 rounded-xl transition-all"
+                                          style={{
+                                            background: betDraft.winner === "away" ? "rgba(249,115,22,0.15)" : "var(--atlas-glass-sm)",
+                                            border: `1.5px solid ${betDraft.winner === "away" ? "#F97316" : "var(--atlas-glass-md)"}`,
+                                          }}
+                                        >
+                                          <TeamFlag code={m.away.code} size="sm" />
+                                          <span className="text-[10px] font-semibold text-atlas-text leading-none text-center">{m.away.name}</span>
+                                        </button>
+                                      </div>
+
+                                      {/* Draw button */}
+                                      <div className="flex justify-center mb-2.5">
+                                        <button
+                                          onClick={() => toggleBetWinner("draw")}
+                                          className="px-4 py-1.5 rounded-full text-[11px] font-semibold transition-all"
+                                          style={{
+                                            background: betDraft.winner === "draw" ? "rgba(249,115,22,0.15)" : "var(--atlas-glass-sm)",
+                                            border: `1.5px solid ${betDraft.winner === "draw" ? "#F97316" : "var(--atlas-glass-md)"}`,
+                                            color: betDraft.winner === "draw" ? "#F97316" : "#8892B0",
+                                          }}
+                                        >
+                                          Empate
+                                        </button>
+                                      </div>
+
+                                      <button
+                                        onClick={() => handleSaveBet(m.id)}
+                                        disabled={!canSaveBet}
+                                        className="w-full py-2 rounded-xl text-[13px] font-bold tracking-wide transition-all"
+                                        style={{
+                                          background: canSaveBet ? "#F97316" : "var(--atlas-glass-sm)",
+                                          border: `1px solid ${canSaveBet ? "#F97316" : "var(--atlas-glass-md)"}`,
+                                          color: canSaveBet ? "#fff" : "#4A5178",
+                                          fontFamily: "var(--font-display)",
+                                          opacity: canSaveBet ? 1 : 0.6,
+                                        }}
+                                      >
+                                        {savingBet ? t("saving") : myBet ? "Actualizar apuesta" : t("save_score")}
+                                      </button>
+                                    </div>
+                                  )}
+
+                                  {/* Members bets list */}
+                                  {loadingBets ? (
                                     <div className="flex justify-center py-6">
                                       <div className="w-6 h-6 rounded-full border-2 border-atlas-primary border-t-transparent animate-spin" />
                                     </div>
-                                  ) : sortedMembers.length === 0 ? (
+                                  ) : sortedBets.length === 0 ? (
                                     <div className="px-4 py-4 text-[13px] text-atlas-dimmed text-center">
                                       Sin miembros en este grupo
                                     </div>
                                   ) : (
-                                    sortedMembers.map((member, idx) => {
-                                      const isMe = member.user_id === user?.id;
-                                      const pts = effectivePoints(member, liveScore);
-                                      const hasResult =
-                                        liveScore?.status === "finished" ||
-                                        member.pred?.points_earned !== null;
+                                    sortedBets.map((entry, idx) => {
+                                      const isMe = entry.user_id === user?.id;
+                                      const pts = effectiveBetPoints(entry.bet, liveScore);
+                                      const hasResult = liveScore?.status === "finished" || entry.bet?.points_earned !== null;
 
                                       if (pts !== prevPts) { medalPos = idx + 1; prevPts = pts; }
-                                      const medal =
-                                        hasResult && member.pred && pts >= 0
-                                          ? medals[medalPos - 1] ?? null
-                                          : null;
+                                      const medal = hasResult && entry.bet && pts >= 0 ? medals[medalPos - 1] ?? null : null;
 
-                                      const winnerName = !member.pred
-                                        ? null
-                                        : member.pred.predicted_winner === "home"
-                                        ? m.home.name
-                                        : member.pred.predicted_winner === "away"
-                                        ? m.away.name
+                                      const winnerName = !entry.bet ? null
+                                        : entry.bet.predicted_winner === "home" ? m.home.name
+                                        : entry.bet.predicted_winner === "away" ? m.away.name
                                         : "Empate";
 
                                       return (
                                         <div
-                                          key={member.user_id}
+                                          key={entry.user_id}
                                           className="flex items-center gap-3 px-4 py-3"
                                           style={{
-                                            borderBottom:
-                                              idx < sortedMembers.length - 1
-                                                ? "1px solid var(--atlas-glass)"
-                                                : "none",
-                                            background: isMe
-                                              ? "rgba(249,115,22,0.05)"
-                                              : "transparent",
+                                            borderBottom: idx < sortedBets.length - 1 ? "1px solid var(--atlas-glass)" : "none",
+                                            background: isMe ? "rgba(249,115,22,0.05)" : "transparent",
                                           }}
                                         >
                                           <span className="text-[18px] w-7 text-center flex-shrink-0">
-                                            {medal ?? (hasResult && member.pred ? `${medalPos}` : "·")}
+                                            {medal ?? (hasResult && entry.bet ? `${medalPos}` : "·")}
                                           </span>
                                           <div
                                             className="w-9 h-9 rounded-xl flex items-center justify-center text-[20px] flex-shrink-0"
-                                            style={{ background: member.avatar?.bg ?? "#F97316" }}
+                                            style={{ background: entry.avatar?.bg ?? "#F97316" }}
                                           >
-                                            {member.avatar?.emoji ?? "⭐"}
+                                            {entry.avatar?.emoji ?? "⭐"}
                                           </div>
                                           <div className="flex-1 min-w-0">
-                                            <span className="text-[13px] font-semibold text-atlas-text">
-                                              {member.username}
-                                            </span>
+                                            <span className="text-[13px] font-semibold text-atlas-text">{entry.username}</span>
                                             {isMe && (
-                                              <span className="text-[11px] text-atlas-primary ml-1">
-                                                {t("you_suffix")}
-                                              </span>
+                                              <span className="text-[11px] text-atlas-primary ml-1">{t("you_suffix")}</span>
                                             )}
-                                            {member.pred && winnerName && (
+                                            {entry.bet && winnerName && (
                                               <div className="text-[10px] text-atlas-muted">{winnerName}</div>
                                             )}
                                           </div>
                                           <div className="flex flex-col items-end flex-shrink-0">
-                                            {member.pred ? (
+                                            {entry.bet ? (
                                               <>
-                                                {member.pred.home_score !== null &&
-                                                  member.pred.away_score !== null && (
-                                                    <span
-                                                      className="text-[16px] font-bold leading-none"
-                                                      style={{
-                                                        fontFamily: "var(--font-display)",
-                                                        color: "#F97316",
-                                                      }}
-                                                    >
-                                                      {member.pred.home_score}–{member.pred.away_score}
-                                                    </span>
-                                                  )}
+                                                {entry.bet.home_score !== null && entry.bet.away_score !== null && (
+                                                  <span
+                                                    className="text-[16px] font-bold leading-none"
+                                                    style={{ fontFamily: "var(--font-display)", color: "#F97316" }}
+                                                  >
+                                                    {entry.bet.home_score}–{entry.bet.away_score}
+                                                  </span>
+                                                )}
                                                 {hasResult && (
                                                   <span
                                                     className="text-[13px] font-bold"
@@ -692,27 +776,12 @@ export default function PredictorPage() {
                                                 )}
                                               </>
                                             ) : (
-                                              <span className="text-[11px] text-atlas-dimmed italic">
-                                                {t("pp_no_pred")}
-                                              </span>
+                                              <span className="text-[11px] text-atlas-dimmed italic">{t("pp_no_pred")}</span>
                                             )}
                                           </div>
                                         </div>
                                       );
                                     })
-                                  )}
-
-                                  {!locked && !hasPred && (
-                                    <button
-                                      onClick={() => setTab("torneo")}
-                                      className="w-full py-3 text-[12px] font-semibold"
-                                      style={{
-                                        borderTop: "1px solid var(--atlas-glass)",
-                                        color: "#F97316",
-                                      }}
-                                    >
-                                      {t("pp_predict_cta")}
-                                    </button>
                                   )}
                                 </div>
                               )}
