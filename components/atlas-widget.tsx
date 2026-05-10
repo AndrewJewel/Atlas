@@ -1,6 +1,7 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import type { User } from "@/lib/types";
+import AgentAvatar from "@/components/AgentAvatar";
 
 interface Message {
   role: "user" | "atlas";
@@ -86,17 +87,10 @@ export function AtlasWidget({ user }: { user: User }) {
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          className="fixed bottom-24 right-4 w-[52px] h-[52px] rounded-full flex items-center justify-center z-50"
-          style={{
-            background: "linear-gradient(135deg,#F97316,#EA580C)",
-            boxShadow: "0 8px 24px rgba(249,115,22,0.45)",
-          }}
+          className="fixed bottom-24 right-4 z-50"
+          style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }}
         >
-          <span className="text-[22px]">🤖</span>
-          <div
-            className="absolute inset-[-4px] rounded-full animate-pulse-ring"
-            style={{ border: "2px solid rgba(249,115,22,0.4)" }}
-          />
+          <AgentAvatar size={60} status="idle" name="atlas-fab" />
         </button>
       )}
 
@@ -117,8 +111,10 @@ export function AtlasWidget({ user }: { user: User }) {
             style={{ background: "linear-gradient(135deg,#1A1F33,#141826)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}
           >
             <div className="flex items-center gap-2.5">
-              <div className="w-[38px] h-[38px] rounded-xl flex items-center justify-center text-[20px]" style={{ background: "#F97316" }}>
-                🤖
+              <div style={{ width: 38, height: 38, overflow: "hidden", flexShrink: 0, borderRadius: 11 }}>
+                <div style={{ transform: "scale(0.475)", transformOrigin: "top left", width: 80, height: 80 }}>
+                  <AgentAvatar size={80} status="idle" name="atlas-widget-header" />
+                </div>
               </div>
               <div>
                 <div style={{ fontFamily: "var(--font-display)" }} className="text-[17px] font-bold text-atlas-text">
@@ -144,8 +140,10 @@ export function AtlasWidget({ user }: { user: User }) {
             {messages.map((m, i) => (
               <div key={i} className={`flex gap-1.5 items-end ${m.role === "user" ? "justify-end" : "justify-start"}`}>
                 {m.role === "atlas" && (
-                  <div className="w-[26px] h-[26px] rounded-lg flex items-center justify-center text-[14px] flex-shrink-0" style={{ background: "#F97316" }}>
-                    🤖
+                  <div style={{ width: 26, height: 26, overflow: "hidden", flexShrink: 0, borderRadius: 8 }}>
+                    <div style={{ transform: "scale(0.325)", transformOrigin: "top left", width: 80, height: 80 }}>
+                      <AgentAvatar size={80} status="idle" name={`atlas-msg-${i}`} />
+                    </div>
                   </div>
                 )}
                 <div>
@@ -170,7 +168,11 @@ export function AtlasWidget({ user }: { user: User }) {
             ))}
             {typing && (
               <div className="flex gap-1.5 items-end justify-start">
-                <div className="w-[26px] h-[26px] rounded-lg flex items-center justify-center text-[14px] flex-shrink-0" style={{ background: "#F97316" }}>🤖</div>
+                <div style={{ width: 26, height: 26, overflow: "hidden", flexShrink: 0, borderRadius: 8 }}>
+                  <div style={{ transform: "scale(0.325)", transformOrigin: "top left", width: 80, height: 80 }}>
+                    <AgentAvatar size={80} status="thinking" name="atlas-widget-typing" />
+                  </div>
+                </div>
                 <div className="px-3 py-2 rounded-[16px_16px_16px_4px] flex gap-1 items-center" style={{ background: "#1A1F33", border: "1px solid rgba(249,115,22,0.25)" }}>
                   <span className="typing-dot" />
                   <span className="typing-dot" />

@@ -157,7 +157,11 @@ export default function ChatPage() {
       {showInfo && (
         <div className="flex-shrink-0 px-4 py-2.5 bg-atlas-glass" style={{ borderBottom: "1px solid rgba(249,115,22,0.2)" }}>
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-[18px]" style={{ background: "#F97316" }}>🤖</div>
+            <div style={{ width: 36, height: 36, overflow: "hidden", flexShrink: 0, borderRadius: 11 }}>
+              <div style={{ transform: "scale(0.45)", transformOrigin: "top left", width: 80, height: 80 }}>
+                <AgentAvatar size={80} status="idle" name="atlas-info" />
+              </div>
+            </div>
             <div>
               <div className="text-[13px] font-bold text-atlas-text">{t("atlas_in_group")}</div>
               <div className="text-[12px] text-atlas-muted">{t("mention_atlas")}</div>
