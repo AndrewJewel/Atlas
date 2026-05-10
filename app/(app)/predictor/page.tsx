@@ -19,7 +19,7 @@ import {
   pinMatchToGroup,
   unpinMatchFromGroup,
   getMatchLiveScore,
-  calculatePoints,
+  calculateGroupPoints,
   isMatchLocked,
   type SavedPrediction,
   type RankingEntry,
@@ -55,7 +55,7 @@ function effectiveBetPoints(bet: GroupBet | null, live: LiveScore | null): numbe
   if (!bet) return -1;
   if (bet.points_earned !== null) return bet.points_earned;
   if (live?.status === "finished") {
-    return calculatePoints(
+    return calculateGroupPoints(
       bet.predicted_winner,
       bet.home_score,
       bet.away_score,

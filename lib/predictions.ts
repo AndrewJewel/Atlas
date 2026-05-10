@@ -71,6 +71,22 @@ export function calculatePoints(
   return predicted === actualWinner ? 1 : 0;
 }
 
+// Group bet scoring: 3 = exact score, 2 = correct winner, 1 = correct draw, 0 = wrong
+export function calculateGroupPoints(
+  predicted: PredWinner,
+  homeScore: number | null,
+  awayScore: number | null,
+  actualHome: number,
+  actualAway: number
+): number {
+  if (homeScore !== null && awayScore !== null &&
+      homeScore === actualHome && awayScore === actualAway) return 3;
+  const actualWinner: PredWinner =
+    actualHome > actualAway ? "home" : actualAway > actualHome ? "away" : "draw";
+  if (predicted !== actualWinner) return 0;
+  return actualWinner === "draw" ? 1 : 2;
+}
+
 export async function savePrediction(
   userId: string,
   matchId: number,
