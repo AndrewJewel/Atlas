@@ -1,6 +1,6 @@
 "use client";
 export const dynamic = "force-dynamic";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { AppHeader } from "@/components/app-header";
 import { useCountdown } from "@/hooks/use-countdown";
 import { useLiveScores } from "@/hooks/use-live-scores";
@@ -48,6 +48,20 @@ function BellIcon({ active, cardBg }: { active: boolean; cardBg: string }) {
   );
 }
 
+// Pick the most relevant day to show on first load.
+// - Exact match on today → today's date
+// - Between matchdays → next upcoming
+// - Before the World Cup → first day
+// - After the World Cup → last day
+function pickInitialDay(): number {
+  const today = new Date().toISOString().slice(0, 10);
+  const exact = MATCH_DAYS.findIndex(d => d.date === today);
+  if (exact !== -1) return exact;
+  const upcoming = MATCH_DAYS.findIndex(d => d.date > today);
+  if (upcoming !== -1) return upcoming;
+  return MATCH_DAYS.length - 1;
+}
+
 // All WC 2026 matches are scheduled in EDT (UTC-4).
 function toLocalKickoff(date: string, etTime: string): { time: string; dayShifted: boolean } {
   const [y, mo, d] = date.split("-").map(Number);
@@ -60,9 +74,11 @@ function toLocalKickoff(date: string, etTime: string): { time: string; dayShifte
 
 
 export default function PartidosPage() {
-  const [activeDay, setActiveDay] = useState(0);
+  const [activeDay, setActiveDay] = useState(pickInitialDay);
   const [activeWC, setActiveWC] = useState("A");
   const [notified, setNotified] = useState<Record<number, boolean>>({});
+  const dayPickerRef = useRef<HTMLDivElement>(null);
+  const dayBtnRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const countdown = useCountdown(KICKOFF);
   const { scores, hasLive } = useLiveScores();
   const { user } = useUser();
@@ -77,6 +93,15 @@ export default function PartidosPage() {
     if (group === "FINAL") return t("round_final");
     return `${t("group_prefix")} ${group}`;
   }
+
+  // Center the active day chip in the horizontal picker on mount/changes
+  useEffect(() => {
+    const btn = dayBtnRefs.current[activeDay];
+    const container = dayPickerRef.current;
+    if (!btn || !container) return;
+    const left = btn.offsetLeft - (container.clientWidth - btn.clientWidth) / 2;
+    container.scrollTo({ left: Math.max(0, left), behavior: "smooth" });
+  }, [activeDay]);
 
   // Load from localStorage; auto-activate team matches on first visit
   useEffect(() => {
@@ -157,10 +182,11 @@ export default function PartidosPage() {
       </div>
 
       {/* Day Picker */}
-      <div className="flex gap-2 px-4 py-3.5 overflow-x-auto flex-shrink-0" style={{ background: "var(--atlas-bg)" }}>
+      <div ref={dayPickerRef} className="flex gap-2 px-4 py-3.5 overflow-x-auto flex-shrink-0" style={{ background: "var(--atlas-bg)" }}>
         {MATCH_DAYS.map((day, i) => (
           <button
             key={i}
+            ref={(el) => { dayBtnRefs.current[i] = el; }}
             onClick={() => setActiveDay(i)}
             className="flex-shrink-0 px-4 py-2 rounded-full text-[13px] font-semibold whitespace-nowrap transition-all"
             style={{
