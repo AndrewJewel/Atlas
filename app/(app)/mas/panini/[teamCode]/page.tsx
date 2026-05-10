@@ -2,7 +2,6 @@
 export const dynamic = "force-dynamic";
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useUser } from "@/hooks/use-user";
 import { supabase } from "@/lib/supabase";
@@ -90,7 +89,7 @@ export default function TeamPage() {
         <Link href="/mas/panini" className="text-[22px] text-atlas-text leading-none">←</Link>
         <div className="flex items-center gap-2.5 flex-1 min-w-0">
           {flag ? (
-            <Image src={`https://flagcdn.com/w40/${flag}.png`} alt={teamName} width={32} height={22}
+            <img src={`https://flagcdn.com/w40/${flag}.png`} alt={teamName} width={32} height={22}
               className="rounded-sm flex-shrink-0 object-cover" style={{ height:22 }} />
           ) : (
             <span className="text-[22px] flex-shrink-0">⭐</span>

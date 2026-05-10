@@ -2,7 +2,6 @@
 export const dynamic = "force-dynamic";
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useUser } from "@/hooks/use-user";
 import { supabase } from "@/lib/supabase";
 
@@ -179,7 +178,7 @@ export default function PaniniPage() {
                         <div className="flex items-center gap-2.5 p-3 rounded-xl"
                           style={{ background:"var(--atlas-surface)", border:`1px solid ${t.owned===t.total?"rgba(34,197,94,0.3)":"var(--atlas-border)"}` }}>
                           {t.flag ? (
-                            <Image src={`https://flagcdn.com/w40/${t.flag}.png`} alt={t.team_name} width={32} height={22}
+                            <img src={`https://flagcdn.com/w40/${t.flag}.png`} alt={t.team_name} width={32} height={22}
                               className="rounded-sm flex-shrink-0 object-cover" style={{ height:22 }} />
                           ) : (
                             <div className="w-8 h-5 rounded-sm flex-shrink-0" style={{ background:"var(--atlas-surface2)" }} />

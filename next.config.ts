@@ -7,7 +7,7 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "flagcdn.com",
-        pathname: "/w**",
+        pathname: "/**",
       },
     ],
   },

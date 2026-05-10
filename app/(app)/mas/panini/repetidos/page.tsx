@@ -2,7 +2,6 @@
 export const dynamic = "force-dynamic";
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/use-user";
 import { supabase } from "@/lib/supabase";
@@ -121,7 +120,7 @@ export default function RepetidosPage() {
                   {/* Flag */}
                   <div className="flex-shrink-0">
                     {flag ? (
-                      <Image src={`https://flagcdn.com/w40/${flag}.png`} alt={tc ?? ""} width={32} height={22}
+                      <img src={`https://flagcdn.com/w40/${flag}.png`} alt={tc ?? ""} width={32} height={22}
                         className="rounded-sm object-cover" style={{ height:22 }} />
                     ) : (
                       <div className="w-8 h-5 rounded-sm" style={{ background:"rgba(249,115,22,0.15)" }}>
