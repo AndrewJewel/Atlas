@@ -23,14 +23,45 @@ export function AtlasWidget({ user }: { user: User }) {
   const fabY = useMotionValue(0);
   const dragStartPos = useRef({ x: 0, y: 0 });
 
+  // FAB size=60, height con sombra ≈ 71px. Posición base: bottom-24 (96px), right-4 (16px)
+  // Constraints en px relativos al punto de anclaje fijo.
+  const FAB_W = 60;
+  const FAB_H = 71;
+  const BASE_RIGHT  = 16;
+  const BASE_BOTTOM = 96;
+
+  const getConstraints = () => {
+    if (typeof window === "undefined") return { left: -300, right: 0, top: -700, bottom: 0 };
+    const W = window.innerWidth;
+    const H = window.innerHeight;
+    return {
+      left:   -(W - FAB_W  - BASE_RIGHT),   // hasta el borde izquierdo
+      right:  BASE_RIGHT,                    // hasta el borde derecho
+      top:    -(H - FAB_H  - BASE_BOTTOM),   // hasta el borde superior
+      bottom: BASE_BOTTOM,                   // hasta el borde inferior
+    };
+  };
+
+  const [fabConstraints, setFabConstraints] = useState(getConstraints);
+
+  // Actualizar constraints si cambia el tamaño de pantalla
+  useEffect(() => {
+    const onResize = () => setFabConstraints(getConstraints());
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Restaurar posición guardada (solo en cliente)
   useEffect(() => {
     try {
       const saved = localStorage.getItem("atlas-fab-pos");
       if (saved) {
         const { x, y } = JSON.parse(saved) as { x: number; y: number };
-        fabX.set(x);
-        fabY.set(y);
+        const c = getConstraints();
+        // Clamp por si el tamaño de pantalla cambió desde que se guardó
+        fabX.set(Math.max(c.left, Math.min(c.right,  x)));
+        fabY.set(Math.max(c.top,  Math.min(c.bottom, y)));
       }
     } catch { /* sin persistencia */ }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -106,6 +137,7 @@ export function AtlasWidget({ user }: { user: User }) {
           drag
           dragMomentum={false}
           dragElastic={0.08}
+          dragConstraints={fabConstraints}
           style={{
             x: fabX,
             y: fabY,
