@@ -150,6 +150,23 @@ function GearRing({ cx, cy, r, color }: { cx: number; cy: number; r: number; col
   );
 }
 
+interface Bar { id: number; born: number; heightFactor: number; side: number; }
+
+function Capsule({ cx, cy, w, h, opacity, glowRadius }: {
+  cx: number; cy: number; w: number; h: number; opacity: number; glowRadius: number;
+}) {
+  return (
+    <rect
+      x={cx - w / 2} y={cy - h / 2}
+      width={w} height={h}
+      rx={w / 2} ry={w / 2}
+      fill="white"
+      opacity={opacity}
+      style={{ filter: `drop-shadow(0 0 ${glowRadius}px rgba(255,255,255,0.95)) drop-shadow(0 0 ${glowRadius * 2}px rgba(255,255,255,0.5))` }}
+    />
+  );
+}
+
 function SpeakingEyes({ leftX, rightX, eyeY, amplitude, blinkScale }: {
   leftX: number; rightX: number; eyeY: number; amplitude: number; blinkScale: number;
 }) {
@@ -162,8 +179,8 @@ function SpeakingEyes({ leftX, rightX, eyeY, amplitude, blinkScale }: {
   const [stretch, setStretch] = useState(1);
   const stretchRef = useRef(1);
   const stretchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const amplitudeStep = Math.round(amplitude * 10);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (amplitude > 0.08 && stretchRef.current === 1) {
       stretchRef.current = 1.45;
@@ -174,9 +191,10 @@ function SpeakingEyes({ leftX, rightX, eyeY, amplitude, blinkScale }: {
         setStretch(1);
       }, 160);
     }
-  }, [Math.round(amplitude * 10)]);
+    // intentionally depend on quantized amplitude step, not raw value
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [amplitudeStep]);
 
-  interface Bar { id: number; born: number; heightFactor: number; side: number; }
   const [bars, setBars] = useState<Bar[]>([]);
   const lastEmit = useRef(0);
 
@@ -208,19 +226,6 @@ function SpeakingEyes({ leftX, rightX, eyeY, amplitude, blinkScale }: {
   const CAPSULE_W = 11;
   const CAPSULE_H = 28;
   const MAX_TRAVEL = 38;
-
-  const Capsule = ({ cx, cy, w, h, opacity, glowRadius }: {
-    cx: number; cy: number; w: number; h: number; opacity: number; glowRadius: number;
-  }) => (
-    <rect
-      x={cx - w / 2} y={cy - h / 2}
-      width={w} height={h}
-      rx={w / 2} ry={w / 2}
-      fill="white"
-      opacity={opacity}
-      style={{ filter: `drop-shadow(0 0 ${glowRadius}px rgba(255,255,255,0.95)) drop-shadow(0 0 ${glowRadius * 2}px rgba(255,255,255,0.5))` }}
-    />
-  );
 
   const renderBars = (eyeCX: number) => bars.map(b => {
     const age = (now - b.born) / 750;
