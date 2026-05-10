@@ -8,6 +8,7 @@ import { TeamFlag } from "@/components/flags/TeamFlag";
 import { useGroups } from "@/hooks/use-groups";
 import { useUser } from "@/hooks/use-user";
 import { useLanguage } from "@/contexts/language-context";
+import { TrophyIcon } from "@/components/TrophyIcon";
 import type { AtlasGroup } from "@/lib/types";
 
 const WC_GROUP_IDS = Object.keys(WC_GROUPS);
@@ -100,7 +101,7 @@ export default function GruposPage() {
             className="rounded-[18px] p-6 mb-5 flex flex-col items-center text-center gap-3"
             style={{ background: "linear-gradient(135deg,var(--atlas-surface3),var(--atlas-surface))", border: "1px solid rgba(249,115,22,0.2)" }}
           >
-            <span className="text-[44px]">🏆</span>
+            <TrophyIcon size={44} color="#F97316" />
             <p className="text-[18px] font-bold text-atlas-text" style={{ fontFamily: "var(--font-display)" }}>
               {t("compete_title")}
             </p>

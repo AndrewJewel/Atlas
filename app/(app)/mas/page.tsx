@@ -8,6 +8,7 @@ import { useTheme } from "@/contexts/theme-context";
 import { useLanguage } from "@/contexts/language-context";
 import { LANGS, type Lang } from "@/lib/i18n";
 import { AppHeader } from "@/components/app-header";
+import { TrophyIcon } from "@/components/TrophyIcon";
 
 export default function MasPage() {
   const { user, completeProfile, signOut } = useUser();
@@ -145,7 +146,7 @@ export default function MasPage() {
 
         {/* ── Menu Items ───────────────────────────────────── */}
         {[
-          { icon: "🏆", label: t("champions_label"), sub: t("champions_sub"), href: "/mas/campeones" },
+          { icon: <TrophyIcon size={22} color="#F97316" />, label: t("champions_label"), sub: t("champions_sub"), href: "/mas/campeones" },
           { icon: "📒", label: t("panini_label"),    sub: t("panini_sub"),    href: "/mas/panini"    },
         ].map((item, i) => (
           <Link key={i} href={item.href}>

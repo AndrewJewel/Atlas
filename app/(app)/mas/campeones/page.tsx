@@ -7,6 +7,7 @@ import { CHAMPIONS, PALMARES, WC_TEAMS } from "@/lib/data";
 import { supabase } from "@/lib/supabase";
 import type { Champion } from "@/lib/types";
 import { useLanguage } from "@/contexts/language-context";
+import { TrophyIcon } from "@/components/TrophyIcon";
 
 const TAB_KEYS = ["ediciones", "palmares"] as const;
 const CONF_KEYS = ["all", "CONMEBOL", "UEFA"] as const;
@@ -257,7 +258,7 @@ export default function CampeonesPage() {
                 <span className="flex-1 text-[14px] font-semibold text-atlas-text">{entry.name}</span>
                 <div className="flex gap-0.5">
                   {Array.from({ length: entry.titles }).map((_, j) => (
-                    <span key={j} className="text-[14px]">🏆</span>
+                    <TrophyIcon key={j} size={16} color="#F97316" />
                   ))}
                 </div>
                 <span style={{ fontFamily: "var(--font-display)" }} className="w-5 text-[22px] font-extrabold text-atlas-primary text-right">

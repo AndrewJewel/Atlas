@@ -2,16 +2,17 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLanguage } from "@/contexts/language-context";
+import { TrophyIcon } from "@/components/TrophyIcon";
 
 export function BottomNav() {
   const pathname = usePathname();
   const { t } = useLanguage();
 
   const TABS = [
-    { href: "/partidos",  icon: "⚽", label: t("nav_partidos")  },
-    { href: "/grupos",    icon: "🏆", label: t("nav_grupos")    },
-    { href: "/predictor", icon: "🎯", label: t("nav_predictor") },
-    { href: "/mas",       icon: "⋯",  label: t("nav_mas")       },
+    { href: "/partidos",  emoji: "⚽",  label: t("nav_partidos")  },
+    { href: "/grupos",    emoji: null,  label: t("nav_grupos")    },
+    { href: "/predictor", emoji: "🎯",  label: t("nav_predictor") },
+    { href: "/mas",       emoji: "⋯",   label: t("nav_mas")       },
   ];
 
   return (
@@ -35,7 +36,11 @@ export function BottomNav() {
               className="w-1 h-1 rounded-full mb-0.5"
               style={{ background: active ? "#F97316" : "transparent" }}
             />
-            <span className="text-[22px] leading-none">{tab.icon}</span>
+            {tab.emoji ? (
+              <span className="text-[22px] leading-none">{tab.emoji}</span>
+            ) : (
+              <TrophyIcon size={22} color={active ? "#F97316" : "#4A5178"} />
+            )}
             <span
               className="text-[10px] font-semibold tracking-wide"
               style={{ color: active ? "#F97316" : "#4A5178" }}
