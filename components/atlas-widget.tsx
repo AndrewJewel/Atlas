@@ -68,7 +68,7 @@ export function AtlasWidget({ user }: { user: User }) {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "atlas",
-      content: `¡Hola ${user.username}! Soy Atlas IA 🤖⚽\nFaltan 35 días para el Mundial. ¿En qué te puedo ayudar?`,
+      content: `Hola ${user.username}, soy Atlas ⚽\nFanático del fútbol y experto del Mundial 2026. ¿En qué te puedo ayudar?`,
       time: new Date().toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" }),
     },
   ]);
