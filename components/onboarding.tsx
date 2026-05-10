@@ -69,8 +69,8 @@ export function Onboarding({ startAtStep = 0, onComplete }: Props) {
           <Image src="/trophy.png" alt="FIFA World Cup Trophy" width={120} height={120} className="mb-4 drop-shadow-2xl" />
           <div className="text-center mb-3">
             <div
-              style={{ fontFamily: "var(--font-display)" }}
-              className="text-[38px] font-black text-atlas-text leading-tight"
+              style={{ fontFamily: "var(--font-display)", color: "#FFFFFF" }}
+              className="text-[38px] font-black leading-tight"
             >
               El Mundial en
             </div>
@@ -81,7 +81,7 @@ export function Onboarding({ startAtStep = 0, onComplete }: Props) {
               tu grupo.
             </div>
           </div>
-          <p className="text-[13px] text-atlas-muted text-center mb-6">
+          <p className="text-[13px] text-center mb-6" style={{ color: "rgba(255,255,255,0.7)" }}>
             Chat · Polla · Álbum Panini · Atlas IA
           </p>
           <div className="flex-1" />
@@ -95,7 +95,7 @@ export function Onboarding({ startAtStep = 0, onComplete }: Props) {
           >
             Empezar →
           </button>
-          <p className="text-[12px] text-atlas-dimmed mt-3 text-center">
+          <p className="text-[12px] mt-3 text-center" style={{ color: "rgba(255,255,255,0.45)" }}>
             Regístrate en 30 segundos · gratis
           </p>
         </div>
@@ -108,12 +108,12 @@ export function Onboarding({ startAtStep = 0, onComplete }: Props) {
           <div className="h-6" />
           <StepBadge label="1 / 3" />
           <h2
-            style={{ fontFamily: "var(--font-display)" }}
-            className="text-[28px] font-extrabold text-atlas-text text-center mb-1"
+            style={{ fontFamily: "var(--font-display)", color: "#FFFFFF" }}
+            className="text-[28px] font-extrabold text-center mb-1"
           >
             Crea tu cuenta
           </h2>
-          <p className="text-[13px] text-atlas-muted text-center mb-5">
+          <p className="text-[13px] text-center mb-5" style={{ color: "rgba(255,255,255,0.7)" }}>
             Para guardar tu progreso y chatear con otros fans.
           </p>
           <AuthForm onSuccess={() => setStep(2)} />
@@ -127,12 +127,12 @@ export function Onboarding({ startAtStep = 0, onComplete }: Props) {
           <div className="h-8" />
           <StepBadge label={startAtStep === 2 ? "1 / 2" : "2 / 3"} />
           <h2
-            style={{ fontFamily: "var(--font-display)" }}
-            className="text-[30px] font-extrabold text-atlas-text text-center mb-1.5"
+            style={{ fontFamily: "var(--font-display)", color: "#FFFFFF" }}
+            className="text-[30px] font-extrabold text-center mb-1.5"
           >
             ¿Cómo te llaman?
           </h2>
-          <p className="text-[14px] text-atlas-muted text-center mb-6">
+          <p className="text-[14px] text-center mb-6" style={{ color: "rgba(255,255,255,0.7)" }}>
             Tu nombre en el grupo. Puede ser tu apodo.
           </p>
           <input
@@ -181,12 +181,12 @@ export function Onboarding({ startAtStep = 0, onComplete }: Props) {
           <div className="h-6" />
           <StepBadge label={startAtStep === 2 ? "2 / 2" : "3 / 3"} />
           <h2
-            style={{ fontFamily: "var(--font-display)" }}
-            className="text-[28px] font-extrabold text-atlas-text text-center mb-1"
+            style={{ fontFamily: "var(--font-display)", color: "#FFFFFF" }}
+            className="text-[28px] font-extrabold text-center mb-1"
           >
             ¿De qué selección eres?
           </h2>
-          <p className="text-[13px] text-atlas-muted text-center mb-3">
+          <p className="text-[13px] text-center mb-3" style={{ color: "rgba(255,255,255,0.7)" }}>
             Te avisaremos cuando jueguen 🔔
           </p>
           <input
@@ -299,13 +299,10 @@ export function Onboarding({ startAtStep = 0, onComplete }: Props) {
 function Logo() {
   return (
     <div className="flex items-center gap-2 justify-center">
-      <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-        <circle cx="14" cy="14" r="12" stroke="#F97316" strokeWidth="2.5" />
-        <circle cx="14" cy="14" r="4.5" fill="#F97316" />
-      </svg>
+      <Image src="/atlas-favicon.png" alt="Atlas" width={28} height={28} priority />
       <span
-        style={{ fontFamily: "var(--font-display)" }}
-        className="text-[24px] font-bold text-atlas-text tracking-tight"
+        style={{ fontFamily: "var(--font-display)", color: "#FFFFFF" }}
+        className="text-[24px] font-bold tracking-tight"
       >
         Atlas
       </span>
