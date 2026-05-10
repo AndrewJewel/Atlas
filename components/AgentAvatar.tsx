@@ -17,6 +17,7 @@ const COLORS: Record<string, ColorPalette> = {
   emerald:      { base: "#001a0f", mid: "#065f46", glow: "#059669", rim: "#34d399", light: "#6ee7b7" },
   coral:        { base: "#1a0505", mid: "#7f1d1d", glow: "#dc2626", rim: "#f87171", light: "#fca5a5" },
   idle:         { base: "#000B1E", mid: "#003080", glow: "#0055cc", rim: "#007AFF", light: "#4da6ff" },
+  soccer:       { base: "#3d1100", mid: "#C2410C", glow: "#F97316", rim: "#FB923C", light: "#FED7AA" },
 };
 
 const STATE_CONFIG = {
@@ -123,6 +124,57 @@ function GearRing({ cx, cy, r, color }: { cx: number; cy: number; r: number; col
       <path d={path} fill="none" stroke={color.rim} strokeWidth="1.2" strokeOpacity="0.7" strokeLinejoin="round" />
       <path d={innerPath} fill="none" stroke={color.light} strokeWidth="0.6" strokeOpacity="0.25" />
     </motion.g>
+  );
+}
+
+function SoccerPattern({ cx, cy, r, uid }: { cx: number; cy: number; r: number; uid: string }) {
+  // Stylized soccer ball pattern: 1 central pentagon + 5 surrounding partial pentagons + connecting seams
+  const pentagonPoints = (centerX: number, centerY: number, size: number, rotation = -Math.PI / 2) => {
+    const pts: string[] = [];
+    for (let i = 0; i < 5; i++) {
+      const angle = rotation + (i * 2 * Math.PI) / 5;
+      pts.push(`${(centerX + size * Math.cos(angle)).toFixed(2)},${(centerY + size * Math.sin(angle)).toFixed(2)}`);
+    }
+    return pts.join(" ");
+  };
+
+  const centerSize = r * 0.30;
+  const sideSize = r * 0.26;
+  const sideDist = r * 0.62;
+  const PANEL = "#0A0A0A";
+  const SEAM = "#1a0500";
+
+  return (
+    <g clipPath={`url(#${uid}_clip)`} style={{ pointerEvents: "none" }}>
+      {/* Seams between center and sides */}
+      {[0, 1, 2, 3, 4].map(i => {
+        const angle = -Math.PI / 2 + (i * 2 * Math.PI) / 5;
+        const x = cx + Math.cos(angle) * sideDist;
+        const y = cy + Math.sin(angle) * sideDist;
+        return (
+          <line key={`seam-${i}`}
+            x1={cx} y1={cy} x2={x} y2={y}
+            stroke={SEAM} strokeWidth={Math.max(1.2, r * 0.025)} strokeOpacity="0.55" strokeLinecap="round"
+          />
+        );
+      })}
+      {/* Central pentagon */}
+      <polygon points={pentagonPoints(cx, cy, centerSize)} fill={PANEL} fillOpacity="0.92"
+        stroke={SEAM} strokeWidth={Math.max(0.8, r * 0.018)} strokeLinejoin="round" />
+      {/* Surrounding pentagons rotated outward */}
+      {[0, 1, 2, 3, 4].map(i => {
+        const angle = -Math.PI / 2 + (i * 2 * Math.PI) / 5;
+        const px = cx + Math.cos(angle) * sideDist;
+        const py = cy + Math.sin(angle) * sideDist;
+        return (
+          <polygon key={`pent-${i}`}
+            points={pentagonPoints(px, py, sideSize, angle + Math.PI / 2)}
+            fill={PANEL} fillOpacity="0.78"
+            stroke={SEAM} strokeWidth={Math.max(0.8, r * 0.018)} strokeLinejoin="round"
+          />
+        );
+      })}
+    </g>
   );
 }
 
@@ -238,6 +290,7 @@ interface AgentAvatarProps {
   mousePosition?: { x: number; y: number } | null;
   size?: number;
   name?: string;
+  variant?: "default" | "soccer";
 }
 
 export default function AgentAvatar({
@@ -246,9 +299,10 @@ export default function AgentAvatar({
   mousePosition = null,
   size = 200,
   name = "Agent",
+  variant = "default",
 }: AgentAvatarProps) {
   const cfg = STATE_CONFIG[status] ?? STATE_CONFIG.idle;
-  const { color } = cfg;
+  const color = variant === "soccer" ? COLORS.soccer : cfg.color;
   const blinkScale = useBlinkAnimation(status);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -385,6 +439,11 @@ export default function AgentAvatar({
             </g>
             <circle cx={cx} cy={cy} r={r} fill={`url(#${uid}_gloss)`} />
             <circle cx={cx} cy={cy} r={r - 0.5} fill="none" stroke={color.light} strokeOpacity="0.15" strokeWidth="1" />
+
+            {/* Soccer ball pattern overlay */}
+            {variant === "soccer" && (
+              <SoccerPattern cx={cx} cy={cy} r={r} uid={uid} />
+            )}
 
             {/* Thinking pulse overlay */}
             <AnimatePresence>

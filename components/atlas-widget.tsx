@@ -160,7 +160,7 @@ export function AtlasWidget({ user }: { user: User }) {
           }}
           onTap={() => { if (!didDrag.current) setOpen(true); }}
         >
-          <AgentAvatar size={60} status="idle" name="atlas-fab" />
+          <AgentAvatar size={60} status="idle" name="atlas-fab" variant="soccer" />
         </motion.div>
       )}
 
@@ -182,7 +182,7 @@ export function AtlasWidget({ user }: { user: User }) {
             <div className="flex items-center gap-2.5">
               <div style={{ width: 38, height: 38, overflow: "hidden", flexShrink: 0, borderRadius: 11 }}>
                 <div style={{ transform: "scale(0.475)", transformOrigin: "top left", width: 80, height: 80 }}>
-                  <AgentAvatar size={80} status="idle" name="atlas-widget-header" />
+                  <AgentAvatar size={80} status="idle" name="atlas-widget-header" variant="soccer" />
                 </div>
               </div>
               <div>
