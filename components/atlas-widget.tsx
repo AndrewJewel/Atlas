@@ -21,8 +21,6 @@ export function AtlasWidget({ user }: { user: User }) {
   const [open, setOpen] = useState(false);
   const fabX = useMotionValue(0);
   const fabY = useMotionValue(0);
-  const dragStartPos = useRef({ x: 0, y: 0 });
-
   // FAB size=60, height con sombra ≈ 71px. Posición base: bottom-24 (96px), right-4 (16px)
   // Constraints en px relativos al punto de anclaje fijo.
   const FAB_W = 60;
@@ -149,17 +147,8 @@ export function AtlasWidget({ user }: { user: User }) {
             cursor: "grab",
           }}
           whileDrag={{ cursor: "grabbing", scale: 1.08 }}
-          onDragStart={() => {
-            dragStartPos.current = { x: fabX.get(), y: fabY.get() };
-          }}
+          onTap={() => setOpen(true)}
           onDragEnd={() => {
-            const moved =
-              Math.abs(fabX.get() - dragStartPos.current.x) +
-              Math.abs(fabY.get() - dragStartPos.current.y);
-            if (moved < 6) {
-              // Fue un tap, no un drag
-              setOpen(true);
-            }
             try {
               localStorage.setItem(
                 "atlas-fab-pos",
