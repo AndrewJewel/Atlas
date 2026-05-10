@@ -9,8 +9,8 @@ export function BottomNav() {
   const { t } = useLanguage();
 
   const TABS = [
-    { href: "/partidos",  emoji: "⚽",  label: t("nav_partidos")  },
-    { href: "/grupos",    emoji: "🏆",  label: t("nav_grupos")    },
+    { href: "/partidos",  emoji: "🏆",  label: t("nav_partidos")  },
+    { href: "/grupos",    emoji: "💬",  label: t("nav_grupos")    },
     { href: "/predictor", emoji: "🎯",  label: t("nav_predictor") },
     { href: "/mas",       emoji: "⋯",   label: t("nav_mas")       },
   ];
