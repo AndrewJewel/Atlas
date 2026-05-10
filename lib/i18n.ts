@@ -74,7 +74,7 @@ const translations = {
     pp_no_groups: "Creá o unite a un grupo para ver las apuestas por partido",
     pp_no_pred: "Sin predicción",
     pp_predict_cta: "Predecir este partido →",
-    pp_add_hint: "Añadí partidos desde la pestaña Torneo para seguirlos con tu grupo",
+    pp_add_hint: "Añade partidos desde la pestaña Torneo para seguirlos con tu grupo",
     level_label: "NIVEL",
     predicted_label: "PREDICHAS",
     points_label: "MIS PUNTOS",
