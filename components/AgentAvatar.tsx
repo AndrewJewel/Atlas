@@ -20,52 +20,31 @@ const COLORS: Record<string, ColorPalette> = {
 };
 
 const STATE_CONFIG = {
-  idle: {
-    color: COLORS.idle,
-    glowScale: 1, glowOpacity: 0.55,
-    glowPulse: { duration: 3.5, ease: "easeInOut" },
-    sphereScale: 1,
-  },
-  thinking: {
-    color: COLORS.midnightBlue,
-    glowScale: 1.15, glowOpacity: 0.9,
-    glowPulse: { duration: 0.85, ease: "easeInOut" },
-    sphereScale: 1,
-  },
-  speaking: {
-    color: COLORS.idle,
-    glowScale: 1.1, glowOpacity: 0.65,
-    glowPulse: { duration: 1.8, ease: "easeInOut" },
-    sphereScale: 1,
-  },
-  success: {
-    color: COLORS.emerald,
-    glowScale: 1.2, glowOpacity: 0.9,
-    glowPulse: { duration: 0.5, ease: "easeOut" },
-    sphereScale: 1.04,
-  },
-  error: {
-    color: COLORS.coral,
-    glowScale: 1.08, glowOpacity: 0.75,
-    glowPulse: { duration: 1.2, ease: "easeInOut" },
-    sphereScale: 1,
-  },
+  idle:     { color: COLORS.idle,         glowScale: 1,    glowOpacity: 0.55, glowPulse: { duration: 3.5,  ease: "easeInOut" }, sphereScale: 1    },
+  thinking: { color: COLORS.midnightBlue, glowScale: 1.15, glowOpacity: 0.9,  glowPulse: { duration: 0.85, ease: "easeInOut" }, sphereScale: 1    },
+  speaking: { color: COLORS.idle,         glowScale: 1.1,  glowOpacity: 0.65, glowPulse: { duration: 1.8,  ease: "easeInOut" }, sphereScale: 1    },
+  success:  { color: COLORS.emerald,      glowScale: 1.2,  glowOpacity: 0.9,  glowPulse: { duration: 0.5,  ease: "easeOut"   }, sphereScale: 1.04 },
+  error:    { color: COLORS.coral,        glowScale: 1.08, glowOpacity: 0.75, glowPulse: { duration: 1.2,  ease: "easeInOut" }, sphereScale: 1    },
 };
 
-function EyeCapsule({ x, y, height = 1, opacity = 1 }: {
-  x: number; y: number; height?: number; opacity?: number;
+// Eye dimensions scale with size (calibrated at size=200: w=11, h=28)
+function eyeW(size: number) { return size * 0.055; }
+function eyeH(size: number, height = 1) { return size * 0.14 * height; }
+
+function EyeCapsule({ x, y, height = 1, opacity = 1, size }: {
+  x: number; y: number; height?: number; opacity?: number; size: number;
 }) {
-  const w = 11;
-  const h = 28 * height;
+  const w = eyeW(size);
+  const h = eyeH(size, height);
   const r = w / 2;
   return (
-    <motion.rect
+    <rect
       x={x - w / 2} y={y - h / 2}
       width={w} height={h}
       rx={r} ry={r}
       fill="white"
       opacity={opacity}
-      style={{ filter: "drop-shadow(0 0 8px rgba(255,255,255,0.9)) drop-shadow(0 0 20px rgba(255,255,255,0.6))" }}
+      style={{ filter: "drop-shadow(0 0 4px rgba(255,255,255,0.9)) drop-shadow(0 0 10px rgba(255,255,255,0.6))" }}
     />
   );
 }
@@ -80,7 +59,7 @@ function useBlinkAnimation(status: Status) {
       const delay = 2500 + Math.random() * 4000;
       timeoutId = setTimeout(() => {
         setBlinkScale(0.05);
-        setTimeout(() => setBlinkScale(1), 120);
+        setTimeout(() => setBlinkScale(1), 100);
         scheduleNextBlink();
       }, delay);
     };
@@ -93,10 +72,7 @@ function useBlinkAnimation(status: Status) {
     setBlinkScale(0.05);
     setTimeout(() => {
       setBlinkScale(1);
-      setTimeout(() => {
-        setBlinkScale(0.05);
-        setTimeout(() => setBlinkScale(1), 100);
-      }, 200);
+      setTimeout(() => { setBlinkScale(0.05); setTimeout(() => setBlinkScale(1), 100); }, 200);
     }, 100);
   }, [status]);
 
@@ -107,7 +83,7 @@ function GearRing({ cx, cy, r, color }: { cx: number; cy: number; r: number; col
   const teeth = 16;
   const path = useMemo(() => {
     const valleyR = r + 2;
-    const outerR = r + 11;
+    const outerR = r + Math.max(6, r * 0.2);
     const toothHalf = (Math.PI * 2 / teeth) * 0.38;
     const pts: string[] = [];
     for (let i = 0; i < teeth; i++) {
@@ -150,7 +126,7 @@ function GearRing({ cx, cy, r, color }: { cx: number; cy: number; r: number; col
   );
 }
 
-interface Bar { id: number; born: number; heightFactor: number; side: number; }
+interface Bar { id: number; born: number; heightFactor: number; }
 
 function Capsule({ cx, cy, w, h, opacity, glowRadius }: {
   cx: number; cy: number; w: number; h: number; opacity: number; glowRadius: number;
@@ -167,8 +143,8 @@ function Capsule({ cx, cy, w, h, opacity, glowRadius }: {
   );
 }
 
-function SpeakingEyes({ leftX, rightX, eyeY, amplitude, blinkScale }: {
-  leftX: number; rightX: number; eyeY: number; amplitude: number; blinkScale: number;
+function SpeakingEyes({ leftX, rightX, eyeY, amplitude, blinkScale, size }: {
+  leftX: number; rightX: number; eyeY: number; amplitude: number; blinkScale: number; size: number;
 }) {
   const ampRef = useRef(amplitude);
   const frameRef = useRef<number | null>(null);
@@ -186,12 +162,8 @@ function SpeakingEyes({ leftX, rightX, eyeY, amplitude, blinkScale }: {
       stretchRef.current = 1.45;
       setStretch(1.45);
       if (stretchTimer.current) clearTimeout(stretchTimer.current);
-      stretchTimer.current = setTimeout(() => {
-        stretchRef.current = 1;
-        setStretch(1);
-      }, 160);
+      stretchTimer.current = setTimeout(() => { stretchRef.current = 1; setStretch(1); }, 160);
     }
-    // intentionally depend on quantized amplitude step, not raw value
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [amplitudeStep]);
 
@@ -205,7 +177,7 @@ function SpeakingEyes({ leftX, rightX, eyeY, amplitude, blinkScale }: {
       if (t - lastEmit.current > interval && amp > 0.06) {
         const id = keyRef.current++;
         const heightFactor = 0.4 + amp * (0.5 + Math.random() * 0.5);
-        setBars(bs => [...bs.slice(-14), { id, born: t, heightFactor, side: id % 2 === 0 ? 1 : -1 }]);
+        setBars(bs => [...bs.slice(-14), { id, born: t, heightFactor }]);
         lastEmit.current = t;
       }
       setBars(bs => bs.filter(b => t - b.born < 750));
@@ -223,44 +195,39 @@ function SpeakingEyes({ leftX, rightX, eyeY, amplitude, blinkScale }: {
     return () => cancelAnimationFrame(id);
   }, []);
 
-  const CAPSULE_W = 11;
-  const CAPSULE_H = 28;
-  const MAX_TRAVEL = 38;
+  const CW = eyeW(size);
+  const CH = eyeH(size);
+  const MAX_TRAVEL = size * 0.19;
+  const eyeGlow = 3 + amplitude * 6;
+  const scaleY = stretch * blinkScale;
 
   const renderBars = (eyeCX: number) => bars.map(b => {
     const age = (now - b.born) / 750;
     if (age > 1 || age < 0) return null;
     const dir = eyeCX < (leftX + rightX) / 2 ? -1 : 1;
-    const travel = age * MAX_TRAVEL * dir;
-    const opacity = (1 - age) * 0.88;
-    const barH = CAPSULE_H * b.heightFactor;
-    const barW = CAPSULE_W * 0.85;
-    const glow = 5 + amplitude * 10;
     return (
-      <Capsule key={`${eyeCX}_${b.id}`} cx={eyeCX + travel} cy={eyeY} w={barW} h={barH} opacity={opacity} glowRadius={glow} />
+      <Capsule
+        key={`${eyeCX}_${b.id}`}
+        cx={eyeCX + age * MAX_TRAVEL * dir}
+        cy={eyeY}
+        w={CW * 0.85}
+        h={CH * b.heightFactor}
+        opacity={(1 - age) * 0.88}
+        glowRadius={eyeGlow}
+      />
     );
   });
-
-  const eyeGlow = 8 + amplitude * 12;
 
   return (
     <g style={{ pointerEvents: "none" }}>
       {renderBars(leftX)}
       {renderBars(rightX)}
-      <motion.g
-        animate={{ scaleY: stretch * blinkScale }}
-        transition={{ type: "spring", stiffness: 280, damping: 18 }}
-        style={{ transformOrigin: `${leftX}px ${eyeY}px` }}
-      >
-        <Capsule cx={leftX} cy={eyeY} w={CAPSULE_W} h={CAPSULE_H} opacity={1} glowRadius={eyeGlow} />
-      </motion.g>
-      <motion.g
-        animate={{ scaleY: stretch * blinkScale }}
-        transition={{ type: "spring", stiffness: 280, damping: 18 }}
-        style={{ transformOrigin: `${rightX}px ${eyeY}px` }}
-      >
-        <Capsule cx={rightX} cy={eyeY} w={CAPSULE_W} h={CAPSULE_H} opacity={1} glowRadius={eyeGlow} />
-      </motion.g>
+      <g style={{ transform: `scaleY(${scaleY})`, transformOrigin: `${leftX}px ${eyeY}px` }}>
+        <Capsule cx={leftX} cy={eyeY} w={CW} h={CH} opacity={1} glowRadius={eyeGlow} />
+      </g>
+      <g style={{ transform: `scaleY(${scaleY})`, transformOrigin: `${rightX}px ${eyeY}px` }}>
+        <Capsule cx={rightX} cy={eyeY} w={CW} h={CH} opacity={1} glowRadius={eyeGlow} />
+      </g>
     </g>
   );
 }
@@ -323,10 +290,9 @@ export default function AgentAvatar({
   const cy = size / 2;
   const r = size * 0.40;
 
-  const leftEyeX = cx - size * 0.115 + lookAt.x;
+  const leftEyeX  = cx - size * 0.115 + lookAt.x;
   const rightEyeX = cx + size * 0.115 + lookAt.x;
   const eyeY = cy + size * 0.03 + lookAt.y;
-  const eyeScale = blinkScale;
 
   const shadowScaleX = 1 + (status === "speaking" ? audioAmplitude * 0.3 : 0);
   const uid = `av_${name.replace(/[\s-]/g, "_")}`;
@@ -339,7 +305,7 @@ export default function AgentAvatar({
       animate={motionAnim}
     >
       <motion.div animate={breatheAnim} style={{ position: "relative", width: size, height: size }}>
-        {/* Bloom glow */}
+        {/* Bloom */}
         <motion.div
           animate={{
             scale: status === "thinking"
@@ -353,7 +319,7 @@ export default function AgentAvatar({
           style={{ position: "absolute", inset: 0, borderRadius: "50%", background: color.glow, filter: "blur(22px)", mixBlendMode: "screen", transformOrigin: "center", pointerEvents: "none" }}
         />
 
-        {/* 3D tilt container */}
+        {/* 3D tilt */}
         <motion.div
           animate={{ rotateX: tilt.rx, rotateY: tilt.ry, scale: cfg.sphereScale }}
           transition={{ type: "spring", stiffness: 120, damping: 18 }}
@@ -362,51 +328,49 @@ export default function AgentAvatar({
           <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ overflow: "visible", display: "block" }}>
             <defs>
               <radialGradient id={`${uid}_sphere`} cx="40%" cy="42%" r="66%" fx="40%" fy="42%">
-                <stop offset="0%" stopColor={color.rim} stopOpacity="1" />
-                <stop offset="45%" stopColor={color.mid} stopOpacity="1" />
-                <stop offset="80%" stopColor={color.base} stopOpacity="1" />
-                <stop offset="100%" stopColor="#000308" stopOpacity="1" />
+                <stop offset="0%"   stopColor={color.rim}  stopOpacity="1" />
+                <stop offset="45%"  stopColor={color.mid}  stopOpacity="1" />
+                <stop offset="80%"  stopColor={color.base} stopOpacity="1" />
+                <stop offset="100%" stopColor="#000308"     stopOpacity="1" />
               </radialGradient>
               <radialGradient id={`${uid}_keyLight`} cx="22%" cy="14%" r="70%">
                 <stop offset="0%"   stopColor="rgba(200,225,255,0.82)" />
                 <stop offset="18%"  stopColor="rgba(160,200,255,0.48)" />
                 <stop offset="42%"  stopColor="rgba(110,165,255,0.18)" />
-                <stop offset="68%"  stopColor="rgba(70,130,255,0.04)" />
-                <stop offset="100%" stopColor="rgba(0,0,0,0)" />
+                <stop offset="68%"  stopColor="rgba(70,130,255,0.04)"  />
+                <stop offset="100%" stopColor="rgba(0,0,0,0)"          />
               </radialGradient>
               <radialGradient id={`${uid}_fillLight`} cx="88%" cy="36%" r="34%">
                 <stop offset="0%"   stopColor="rgba(120,175,255,0.42)" />
-                <stop offset="55%"  stopColor="rgba(80,140,255,0.10)" />
-                <stop offset="100%" stopColor="rgba(0,0,0,0)" />
+                <stop offset="55%"  stopColor="rgba(80,140,255,0.10)"  />
+                <stop offset="100%" stopColor="rgba(0,0,0,0)"          />
               </radialGradient>
               <radialGradient id={`${uid}_refract`} cx="50%" cy="100%" r="60%">
                 <stop offset="0%"   stopColor="rgba(130,200,255,0.88)" />
-                <stop offset="25%"  stopColor="rgba(95,170,255,0.50)" />
-                <stop offset="52%"  stopColor="rgba(60,130,255,0.15)" />
-                <stop offset="100%" stopColor="rgba(0,0,0,0)" />
+                <stop offset="25%"  stopColor="rgba(95,170,255,0.50)"  />
+                <stop offset="52%"  stopColor="rgba(60,130,255,0.15)"  />
+                <stop offset="100%" stopColor="rgba(0,0,0,0)"          />
               </radialGradient>
               <radialGradient id={`${uid}_fresnel`} cx="50%" cy="50%" r="50%">
-                <stop offset="0%"  stopColor="rgba(0,0,0,0)" />
-                <stop offset="64%" stopColor="rgba(0,0,0,0)" />
-                <stop offset="82%" stopColor={color.rim} stopOpacity="0.18" />
-                <stop offset="93%" stopColor={color.light} stopOpacity="0.65" />
+                <stop offset="0%"   stopColor="rgba(0,0,0,0)"   />
+                <stop offset="64%"  stopColor="rgba(0,0,0,0)"   />
+                <stop offset="82%"  stopColor={color.rim}  stopOpacity="0.18" />
+                <stop offset="93%"  stopColor={color.light} stopOpacity="0.65" />
                 <stop offset="100%" stopColor={color.light} stopOpacity="0.82" />
               </radialGradient>
               <radialGradient id={`${uid}_gloss`} cx="30%" cy="20%" r="44%">
                 <stop offset="0%"   stopColor="rgba(255,255,255,0.55)" />
                 <stop offset="35%"  stopColor="rgba(255,255,255,0.18)" />
                 <stop offset="70%"  stopColor="rgba(255,255,255,0.04)" />
-                <stop offset="100%" stopColor="rgba(255,255,255,0)" />
+                <stop offset="100%" stopColor="rgba(255,255,255,0)"    />
               </radialGradient>
               <clipPath id={`${uid}_clip`}>
                 <circle cx={cx} cy={cy} r={r} />
               </clipPath>
             </defs>
 
-            {/* 1. Sphere base */}
+            {/* Sphere layers */}
             <circle cx={cx} cy={cy} r={r} fill={`url(#${uid}_sphere)`} />
-
-            {/* 2-5. Light layers */}
             <g clipPath={`url(#${uid}_clip)`} style={{ mixBlendMode: "screen" }}>
               <circle cx={cx} cy={cy} r={r} fill={`url(#${uid}_refract)`} />
             </g>
@@ -419,43 +383,35 @@ export default function AgentAvatar({
             <g clipPath={`url(#${uid}_clip)`} style={{ mixBlendMode: "screen" }}>
               <circle cx={cx} cy={cy} r={r} fill={`url(#${uid}_keyLight)`} />
             </g>
-
-            {/* 6. Gloss */}
             <circle cx={cx} cy={cy} r={r} fill={`url(#${uid}_gloss)`} />
-
-            {/* 7. Crystal border */}
             <circle cx={cx} cy={cy} r={r - 0.5} fill="none" stroke={color.light} strokeOpacity="0.15" strokeWidth="1" />
 
-            {/* Thinking luminosity pulse */}
+            {/* Thinking pulse overlay */}
             <AnimatePresence>
               {status === "thinking" && (
-                <motion.circle
-                  key="think-lum"
-                  cx={cx} cy={cy} r={r}
-                  fill={color.light}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: [0, 0.22, 0] }}
-                  exit={{ opacity: 0 }}
+                <motion.circle key="think-lum" cx={cx} cy={cy} r={r} fill={color.light}
+                  initial={{ opacity: 0 }} animate={{ opacity: [0, 0.22, 0] }} exit={{ opacity: 0 }}
                   transition={{ duration: 0.85, repeat: Infinity, ease: "easeInOut" }}
                 />
               )}
             </AnimatePresence>
 
-            {/* Eyes */}
+            {/* Eyes — blink via direct CSS transform (no framer-motion interpolation) */}
             <g clipPath={`url(#${uid}_clip)`}>
               <AnimatePresence mode="wait">
                 {status === "speaking" ? (
                   <motion.g key="speaking-eyes" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }}>
-                    <SpeakingEyes leftX={leftEyeX} rightX={rightEyeX} eyeY={eyeY} amplitude={audioAmplitude} blinkScale={eyeScale} />
+                    <SpeakingEyes leftX={leftEyeX} rightX={rightEyeX} eyeY={eyeY} amplitude={audioAmplitude} blinkScale={blinkScale} size={size} />
                   </motion.g>
                 ) : (
                   <motion.g key="normal-eyes" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
-                    <motion.g animate={{ scaleY: eyeScale }} style={{ transformOrigin: `${leftEyeX}px ${eyeY}px` }} transition={{ duration: 0.08 }}>
-                      <EyeCapsule x={leftEyeX} y={eyeY} height={status === "success" ? 1.1 : 1} />
-                    </motion.g>
-                    <motion.g animate={{ scaleY: eyeScale }} style={{ transformOrigin: `${rightEyeX}px ${eyeY}px` }} transition={{ duration: 0.08 }}>
-                      <EyeCapsule x={rightEyeX} y={eyeY} height={status === "success" ? 1.1 : 1} />
-                    </motion.g>
+                    {/* CSS scaleY para parpadeo instantáneo y visible */}
+                    <g style={{ transform: `scaleY(${blinkScale})`, transformOrigin: `${leftEyeX}px ${eyeY}px` }}>
+                      <EyeCapsule x={leftEyeX} y={eyeY} height={status === "success" ? 1.1 : 1} size={size} />
+                    </g>
+                    <g style={{ transform: `scaleY(${blinkScale})`, transformOrigin: `${rightEyeX}px ${eyeY}px` }}>
+                      <EyeCapsule x={rightEyeX} y={eyeY} height={status === "success" ? 1.1 : 1} size={size} />
+                    </g>
                   </motion.g>
                 )}
               </AnimatePresence>
@@ -474,12 +430,8 @@ export default function AgentAvatar({
             {status === "speaking" && (
               <motion.circle
                 cx={cx} cy={cy} r={r + 4}
-                fill="none"
-                stroke={COLORS.idle.rim}
-                strokeWidth="1.5"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.25 }}
+                fill="none" stroke={COLORS.idle.rim} strokeWidth="1.5"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.25 }}
                 style={{ transformOrigin: `${cx}px ${cy}px`, animation: "speakRingPulse 1.4s ease-in-out infinite" }}
               />
             )}
@@ -487,12 +439,8 @@ export default function AgentAvatar({
             {/* Success: flash ring */}
             <AnimatePresence>
               {status === "success" && (
-                <motion.circle
-                  key="success-ring"
-                  cx={cx} cy={cy} r={r + 4}
-                  fill="none"
-                  stroke={COLORS.emerald.rim}
-                  strokeWidth="3"
+                <motion.circle key="success-ring" cx={cx} cy={cy} r={r + 4}
+                  fill="none" stroke={COLORS.emerald.rim} strokeWidth="3"
                   initial={{ scale: 0.85, opacity: 0 }}
                   animate={{ scale: [0.9, 1.18, 1.05], opacity: [0, 0.9, 0] }}
                   transition={{ duration: 0.8, ease: "easeOut" }}
@@ -509,13 +457,9 @@ export default function AgentAvatar({
         animate={{ scaleX: shadowScaleX, opacity: status === "error" ? 0.4 : 0.9 }}
         transition={{ type: "spring", stiffness: 200, damping: 20 }}
         style={{
-          width: size * 0.85,
-          height: size * 0.10,
-          borderRadius: "50%",
-          marginTop: -size * 0.02,
+          width: size * 0.85, height: size * 0.10, borderRadius: "50%", marginTop: -size * 0.02,
           background: `radial-gradient(ellipse at center, ${color.light}60 0%, ${color.glow}40 35%, transparent 72%)`,
-          filter: "blur(14px)",
-          transformOrigin: "center",
+          filter: "blur(14px)", transformOrigin: "center",
         }}
       />
     </motion.div>
