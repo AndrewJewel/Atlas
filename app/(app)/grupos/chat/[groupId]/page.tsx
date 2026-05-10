@@ -137,7 +137,7 @@ export default function ChatPage() {
   }, [input, user, myId, groupId]);
 
   return (
-    <div className="flex flex-col h-screen max-w-md mx-auto" style={{ background: "var(--atlas-bg)" }}>
+    <div style={{ position: "fixed", inset: 0, display: "flex", flexDirection: "column", background: "var(--atlas-bg)", zIndex: 10 }}>
       {/* Header */}
       <div
         className="flex items-center gap-3 px-4 py-3 flex-shrink-0"
