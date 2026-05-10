@@ -1,16 +1,18 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
-const TABS = [
-  { href: "/partidos",  icon: "⚽", label: "Partidos"  },
-  { href: "/grupos",    icon: "🏆", label: "Grupos"    },
-  { href: "/predictor", icon: "🎯", label: "Predictor" },
-  { href: "/mas",       icon: "⋯",  label: "Más"       },
-];
+import { useLanguage } from "@/contexts/language-context";
 
 export function BottomNav() {
   const pathname = usePathname();
+  const { t } = useLanguage();
+
+  const TABS = [
+    { href: "/partidos",  icon: "⚽", label: t("nav_partidos")  },
+    { href: "/grupos",    icon: "🏆", label: t("nav_grupos")    },
+    { href: "/predictor", icon: "🎯", label: t("nav_predictor") },
+    { href: "/mas",       icon: "⋯",  label: t("nav_mas")       },
+  ];
 
   return (
     <nav

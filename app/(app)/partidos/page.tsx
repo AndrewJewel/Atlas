@@ -5,6 +5,7 @@ import { AppHeader } from "@/components/app-header";
 import { useCountdown } from "@/hooks/use-countdown";
 import { useLiveScores } from "@/hooks/use-live-scores";
 import { useUser } from "@/hooks/use-user";
+import { useLanguage } from "@/contexts/language-context";
 import { MATCHES, MATCH_DAYS, KICKOFF } from "@/lib/data";
 import { TeamFlag } from "@/components/flags/TeamFlag";
 
@@ -55,15 +56,6 @@ function toLocalKickoff(date: string, etTime: string): { time: string; dayShifte
   return { time, dayShifted: localDate !== date };
 }
 
-function groupLabel(group: string) {
-  if (group === "R32")   return "Ronda de 32";
-  if (group === "R16")   return "Octavos de final";
-  if (group === "QF")    return "Cuartos de final";
-  if (group === "SF")    return "Semifinal";
-  if (group === "3P")    return "3er y 4to puesto";
-  if (group === "FINAL") return "🏆 Final";
-  return `Grupo ${group}`;
-}
 
 export default function PartidosPage() {
   const [activeDay, setActiveDay] = useState(0);
@@ -71,6 +63,17 @@ export default function PartidosPage() {
   const countdown = useCountdown(KICKOFF);
   const { scores, hasLive } = useLiveScores();
   const { user } = useUser();
+  const { t } = useLanguage();
+
+  function groupLabel(group: string) {
+    if (group === "R32")   return t("round_r32");
+    if (group === "R16")   return t("round_r16");
+    if (group === "QF")    return t("round_qf");
+    if (group === "SF")    return t("round_sf");
+    if (group === "3P")    return t("round_3p");
+    if (group === "FINAL") return t("round_final");
+    return `${t("group_prefix")} ${group}`;
+  }
 
   // Load from localStorage; auto-activate team matches on first visit
   useEffect(() => {
@@ -114,20 +117,20 @@ export default function PartidosPage() {
           className="text-center text-[11px] font-bold tracking-[0.18em] text-atlas-muted mb-2.5"
           style={{ fontFamily: "var(--font-display)" }}
         >
-          {hasLive ? "⚽ PARTIDOS EN VIVO AHORA" : "FALTAN PARA EL MUNDIAL"}
+          {hasLive ? t("live_now") : t("countdown_title")}
         </p>
         {!hasLive ? (
           <div className="flex justify-center gap-5">
             {([
-              [countdown.days, "DÍAS"],
-              [countdown.hours, "HORAS"],
-              [countdown.mins, "MIN"],
-              [countdown.secs, "SEG"],
+              [countdown.days, t("days")],
+              [countdown.hours, t("hours")],
+              [countdown.mins, t("mins")],
+              [countdown.secs, t("secs")],
             ] as [number, string][]).map(([val, lbl], i) => (
               <div key={i} className="flex flex-col items-center gap-1">
                 <span
                   className="text-[40px] font-black leading-none tracking-tight"
-                  style={{ fontFamily: "var(--font-display)", color: lbl === "SEG" ? "#F97316" : "var(--atlas-text)" }}
+                  style={{ fontFamily: "var(--font-display)", color: lbl === t("secs") ? "#F97316" : "var(--atlas-text)" }}
                 >
                   {String(val).padStart(2, "0")}
                 </span>
@@ -144,7 +147,7 @@ export default function PartidosPage() {
           <div className="flex items-center justify-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
             <span className="text-[15px] font-bold text-atlas-text" style={{ fontFamily: "var(--font-display)" }}>
-              Hay partidos en curso — bajá para verlos
+              {t("live_scroll")}
             </span>
           </div>
         )}
@@ -192,7 +195,7 @@ export default function PartidosPage() {
                   className="text-[13px] font-bold text-atlas-text tracking-wide"
                   style={{ fontFamily: "var(--font-display)" }}
                 >
-                  {groupLabel(m.group)} · Partido {m.num}
+                  {groupLabel(m.group)} · {t("match_num")} {m.num}
                 </span>
                 <div className="flex items-center gap-2">
                   {isLive && (
@@ -203,7 +206,7 @@ export default function PartidosPage() {
                   )}
                   {isFinished && (
                     <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(34,197,94,0.12)", color: "#22C55E" }}>
-                      FIN
+                      {t("finished")}
                     </span>
                   )}
                   <button
@@ -257,7 +260,7 @@ export default function PartidosPage() {
                         {dayShifted && (
                           <span className="text-[10px] font-bold" style={{ color: "#F97316" }}>+1</span>
                         )}
-                        <span className="text-[11px] text-atlas-dimmed">hora local</span>
+                        <span className="text-[11px] text-atlas-dimmed">{t("local_time")}</span>
                       </div>
                     );
                   })()}

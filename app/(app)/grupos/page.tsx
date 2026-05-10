@@ -7,20 +7,25 @@ import { WC_GROUPS } from "@/lib/data";
 import { TeamFlag } from "@/components/flags/TeamFlag";
 import { useGroups } from "@/hooks/use-groups";
 import { useUser } from "@/hooks/use-user";
+import { useLanguage } from "@/contexts/language-context";
 import type { AtlasGroup } from "@/lib/types";
 
 const WC_GROUP_IDS = Object.keys(WC_GROUPS);
 
-function shareGroup(group: AtlasGroup) {
-  const url = `${window.location.origin}/join/${group.code}`;
-  const text = `¡Unite a mi grupo "${group.name}" en Atlas!\nCódigo: ${group.code}\n${url}`;
-  if (navigator.share) navigator.share({ title: group.name, text, url }).catch(() => {});
-  else navigator.clipboard.writeText(text);
-}
-
 export default function GruposPage() {
   const { groups, loading, createGroup, joinGroup, deleteGroup } = useGroups();
   const { user } = useUser();
+  const { t } = useLanguage();
+
+  function shareGroup(group: AtlasGroup) {
+    const url = `${window.location.origin}/join/${group.code}`;
+    const text = t("share_text")
+      .replace("{name}", group.name)
+      .replace("{code}", group.code)
+      .replace("{url}", url);
+    if (navigator.share) navigator.share({ title: group.name, text, url }).catch(() => {});
+    else navigator.clipboard.writeText(text);
+  }
   const [activeGroup, setActiveGroup] = useState(0);
   const [activeWC, setActiveWC] = useState("A");
 
@@ -81,7 +86,7 @@ export default function GruposPage() {
 
   return (
     <div className="flex flex-col flex-1">
-      <AppHeader title="Grupos" />
+      <AppHeader title={t("tab_grupos")} />
       <div className="flex-1 overflow-y-auto px-4 pt-3 pb-4">
 
         {/* ── My Groups ─────────────────────────────────────────── */}
@@ -97,10 +102,10 @@ export default function GruposPage() {
           >
             <span className="text-[44px]">🏆</span>
             <p className="text-[18px] font-bold text-atlas-text" style={{ fontFamily: "var(--font-display)" }}>
-              Competi con tus amigos
+              {t("compete_title")}
             </p>
             <p className="text-[13px] text-atlas-muted leading-relaxed">
-              Creá un grupo, compartí el código y predigan el Mundial 2026 juntos.
+              {t("compete_sub")}
             </p>
             <div className="flex gap-3 w-full mt-1">
               <button
@@ -108,14 +113,14 @@ export default function GruposPage() {
                 className="flex-1 py-3 rounded-xl text-white text-[14px] font-bold"
                 style={{ background: "#F97316" }}
               >
-                Crear grupo
+                {t("create_group")}
               </button>
               <button
                 onClick={() => setModal('join')}
                 className="flex-1 py-3 rounded-xl text-[14px] font-semibold"
                 style={{ background: "var(--atlas-surface2)", border: "1px solid var(--atlas-glass-border)", color: "var(--atlas-text)" }}
               >
-                Unirme
+                {t("join_btn")}
               </button>
             </div>
           </div>
@@ -166,7 +171,7 @@ export default function GruposPage() {
                         className="text-[10px] px-1.5 py-0.5 rounded font-bold"
                         style={{ background: "rgba(249,115,22,0.15)", color: "#F97316" }}
                       >
-                        COPIAR
+                        {t("copy_code")}
                       </button>
                     </div>
                   </div>
@@ -176,7 +181,7 @@ export default function GruposPage() {
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white text-[12px] font-bold"
                       style={{ background: "#F97316" }}
                     >
-                      📤 Compartir
+                      {t("share_btn")}
                     </button>
                     {current.created_by === user?.id && (
                       <button
@@ -212,14 +217,14 @@ export default function GruposPage() {
                     className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-white text-[13px] font-bold"
                     style={{ background: "#F97316", fontFamily: "var(--font-sans)" }}
                   >
-                    💬 Chat
+                    {t("chat_btn")}
                   </Link>
                   <button
                     onClick={() => setModal('join')}
                     className="flex-1 py-2.5 rounded-xl text-[13px] font-semibold"
                     style={{ background: "var(--atlas-glass)", border: "1px dashed var(--atlas-glass-border)", color: "#8892B0" }}
                   >
-                    + Invitar
+                    {t("invite_btn")}
                   </button>
                 </div>
               </div>
@@ -230,7 +235,7 @@ export default function GruposPage() {
         {/* ── WC Standings ──────────────────────────────────────── */}
 
         <div style={{ fontFamily: "var(--font-display)" }} className="text-[22px] font-bold text-atlas-text mb-3 tracking-tight">
-          Tabla de posiciones
+          {t("standings")}
         </div>
 
         <div className="flex gap-1.5 mb-3 overflow-x-auto pb-1">
@@ -259,7 +264,7 @@ export default function GruposPage() {
             className="grid px-3.5 py-2.5"
             style={{ gridTemplateColumns: "24px minmax(0,1fr) repeat(8, 22px)", borderBottom: "1px solid var(--atlas-border)", gap: 2 }}
           >
-            {["#", "Selección", "PJ", "G", "E", "P", "GF", "GC", "DG", "Pts"].map((h, i) => (
+            {["#", t("table_selection"), "PJ", "G", "E", "P", "GF", "GC", "DG", "Pts"].map((h, i) => (
               <span key={i} className="text-[9px] font-bold text-atlas-dimmed" style={{ textAlign: i === 0 || i > 1 ? "center" : "left" }}>
                 {h}
               </span>
@@ -289,7 +294,7 @@ export default function GruposPage() {
           ))}
           <div className="flex items-center gap-1.5 px-3.5 py-2">
             <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: "#22C55E" }} />
-            <span className="text-[11px] text-atlas-dimmed">Clasifican a octavos</span>
+            <span className="text-[11px] text-atlas-dimmed">{t("qualify_note")}</span>
           </div>
         </div>
       </div>
@@ -313,17 +318,17 @@ export default function GruposPage() {
             {modal === 'create' && !created && (
               <>
                 <h2 style={{ fontFamily: "var(--font-display)" }} className="text-[22px] font-bold text-atlas-text mb-5">
-                  Crear grupo
+                  {t("create_group")}
                 </h2>
                 <label className="block text-[11px] font-bold text-atlas-muted mb-2 tracking-widest uppercase">
-                  Nombre del grupo
+                  {t("group_name_label")}
                 </label>
                 <input
                   autoFocus
                   value={newName}
                   onChange={e => setNewName(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleCreate()}
-                  placeholder="ej: Los Cracks 🔥"
+                  placeholder={t("group_name_placeholder")}
                   maxLength={50}
                   className="w-full px-4 py-3 rounded-xl text-[16px] text-atlas-text outline-none mb-4"
                   style={{ background: "var(--atlas-surface3)", border: "1px solid var(--atlas-border-md)" }}
@@ -334,10 +339,10 @@ export default function GruposPage() {
                   className="w-full py-3.5 rounded-xl text-white text-[15px] font-bold mb-2"
                   style={{ background: newName.trim() ? "#F97316" : "#374151", opacity: creating ? 0.7 : 1 }}
                 >
-                  {creating ? "Creando..." : "Crear grupo"}
+                  {creating ? t("creating") : t("create_group")}
                 </button>
                 <button onClick={() => setModal('join')} className="w-full py-2 text-[13px] text-atlas-dimmed">
-                  ¿Tenés un código? Unirme →
+                  {t("has_code")}
                 </button>
               </>
             )}
@@ -348,9 +353,9 @@ export default function GruposPage() {
                 <div className="text-center mb-6">
                   <span className="text-[48px]">🎉</span>
                   <h2 style={{ fontFamily: "var(--font-display)" }} className="text-[22px] font-bold text-atlas-text mt-2">
-                    ¡{created.name} listo!
+                    ¡{created.name} {t("group_ready")}
                   </h2>
-                  <p className="text-[13px] text-atlas-muted mt-1">Compartí este código con tus amigos</p>
+                  <p className="text-[13px] text-atlas-muted mt-1">{t("share_code_hint")}</p>
                 </div>
                 <div
                   className="flex items-center justify-center py-5 rounded-2xl mb-5"
@@ -369,7 +374,7 @@ export default function GruposPage() {
                     className="flex-1 py-3.5 rounded-xl text-white text-[14px] font-bold"
                     style={{ background: "#25D366" }}
                   >
-                    📤 Compartir
+                    {t("share_btn")}
                   </button>
                   <button
                     onClick={() => copyLink(created)}
@@ -380,11 +385,11 @@ export default function GruposPage() {
                       color: copied ? "#22C55E" : "var(--atlas-text)",
                     }}
                   >
-                    {copied ? "✓ Copiado" : "🔗 Copiar link"}
+                    {copied ? t("link_copied") : t("copy_link")}
                   </button>
                 </div>
                 <button onClick={closeModal} className="w-full py-2 text-[13px] text-atlas-dimmed">
-                  Listo, ir al grupo →
+                  {t("go_to_group")}
                 </button>
               </>
             )}
@@ -393,10 +398,10 @@ export default function GruposPage() {
             {modal === 'join' && (
               <>
                 <h2 style={{ fontFamily: "var(--font-display)" }} className="text-[22px] font-bold text-atlas-text mb-5">
-                  Unirme a un grupo
+                  {t("join_group_title")}
                 </h2>
                 <label className="block text-[11px] font-bold text-atlas-muted mb-2 tracking-widest uppercase">
-                  Código del grupo
+                  {t("join_code_label")}
                 </label>
                 <input
                   autoFocus
@@ -423,10 +428,10 @@ export default function GruposPage() {
                   className="w-full py-3.5 rounded-xl text-white text-[15px] font-bold mb-2"
                   style={{ background: joinCode.trim() ? "#F97316" : "#374151", opacity: joining ? 0.7 : 1 }}
                 >
-                  {joining ? "Buscando..." : "Unirme"}
+                  {joining ? t("searching") : t("join_btn")}
                 </button>
                 <button onClick={() => setModal('create')} className="w-full py-2 text-[13px] text-atlas-dimmed">
-                  ¿No tenés código? Crear mi grupo →
+                  {t("no_code")}
                 </button>
               </>
             )}
@@ -442,13 +447,13 @@ export default function GruposPage() {
                     🗑️
                   </div>
                   <h2 style={{ fontFamily: "var(--font-display)" }} className="text-[22px] font-bold text-atlas-text mb-2">
-                    ¿Eliminar "{current.name}"?
+                    {t("delete_title").replace("{name}", current.name)}
                   </h2>
                   <p className="text-[13px] leading-relaxed" style={{ color: "#EF4444" }}>
-                    Esta acción es permanente e irreversible.
+                    {t("delete_warning")}
                   </p>
                   <p className="text-[13px] text-atlas-muted leading-relaxed mt-1">
-                    Se borrarán <span className="font-bold text-atlas-text">todos los mensajes del chat</span>, los miembros del grupo y el código de acceso. Nadie podrá recuperar nada.
+                    {t("delete_detail")}
                   </p>
                 </div>
                 <button
@@ -460,7 +465,7 @@ export default function GruposPage() {
                     opacity: deleting ? 0.8 : 1,
                   }}
                 >
-                  {deleting ? "Eliminando…" : "Sí, eliminar para siempre"}
+                  {deleting ? t("deleting") : t("delete_confirm")}
                 </button>
                 <button
                   onClick={closeModal}
@@ -468,7 +473,7 @@ export default function GruposPage() {
                   className="w-full py-3 rounded-xl text-[14px] font-semibold"
                   style={{ background: "var(--atlas-surface2)", color: "var(--atlas-text)" }}
                 >
-                  Cancelar
+                  {t("cancel")}
                 </button>
               </>
             )}

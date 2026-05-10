@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Barlow_Condensed, DM_Sans } from "next/font/google";
 import { UserProvider } from "@/contexts/user-context";
 import { ThemeProvider } from "@/contexts/theme-context";
+import { LanguageProvider } from "@/contexts/language-context";
 import "./globals.css";
 
 const barlowCondensed = Barlow_Condensed({
@@ -49,7 +50,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
         <ThemeProvider>
-          <UserProvider>{children}</UserProvider>
+          <LanguageProvider>
+            <UserProvider>{children}</UserProvider>
+          </LanguageProvider>
         </ThemeProvider>
       </body>
     </html>

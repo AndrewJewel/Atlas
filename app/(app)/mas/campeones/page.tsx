@@ -6,17 +6,10 @@ import Link from "next/link";
 import { CHAMPIONS, PALMARES, WC_TEAMS } from "@/lib/data";
 import { supabase } from "@/lib/supabase";
 import type { Champion } from "@/lib/types";
+import { useLanguage } from "@/contexts/language-context";
 
-const TABS = [
-  { key: "ediciones", label: "Ediciones" },
-  { key: "palmares",  label: "Palmarés" },
-] as const;
-
-const CONF_FILTERS = [
-  { key: "all",      label: "Todos" },
-  { key: "CONMEBOL", label: "CONMEBOL" },
-  { key: "UEFA",     label: "UEFA" },
-] as const;
+const TAB_KEYS = ["ediciones", "palmares"] as const;
+const CONF_KEYS = ["all", "CONMEBOL", "UEFA"] as const;
 
 const selectStyle: CSSProperties = {
   background: "var(--atlas-surface)",
@@ -37,6 +30,7 @@ const selectStyle: CSSProperties = {
 };
 
 export default function CampeonesPage() {
+  const { t } = useLanguage();
   const [tab, setTab]       = useState<"ediciones" | "palmares">("ediciones");
   const [conf, setConf]     = useState<"all" | "CONMEBOL" | "UEFA">("all");
   const [decade, setDecade] = useState<string>("all");
@@ -51,7 +45,7 @@ export default function CampeonesPage() {
       .then(({ data }) => {
         if (!data || data.length === 0) return;
         const row = data[0];
-        const team = WC_TEAMS.find((t) => t.code === row.winner_code);
+        const team = WC_TEAMS.find((tm) => tm.code === row.winner_code);
         setChampion2026({
           year: 2026,
           host: "EE. UU. / Canadá / México",
@@ -60,7 +54,7 @@ export default function CampeonesPage() {
             flag: team?.flag ?? "🏳️",
             conf: row.conf as "CONMEBOL" | "UEFA",
           },
-          runnerUp: WC_TEAMS.find((t) => t.code === row.runner_up_code)?.name ?? row.runner_up_name,
+          runnerUp: WC_TEAMS.find((tm) => tm.code === row.runner_up_code)?.name ?? row.runner_up_name,
           score: row.score,
         });
       });
@@ -109,7 +103,7 @@ export default function CampeonesPage() {
       >
         <Link href="/mas" className="text-[22px] text-atlas-text leading-none">←</Link>
         <span style={{ fontFamily: "var(--font-display)" }} className="text-[20px] font-bold text-atlas-text tracking-tight">
-          Campeones históricos
+          {t("champions_label")}
         </span>
       </div>
 
@@ -118,7 +112,7 @@ export default function CampeonesPage() {
         className="flex flex-shrink-0"
         style={{ background: "var(--atlas-surface)", borderBottom: "1px solid var(--atlas-border)" }}
       >
-        {TABS.map(({ key, label }) => (
+        {TAB_KEYS.map((key) => (
           <button
             key={key}
             onClick={() => setTab(key)}
@@ -130,7 +124,7 @@ export default function CampeonesPage() {
               background: "none",
             }}
           >
-            {label}
+            {key === "ediciones" ? t("editions_tab") : t("palmares_tab")}
           </button>
         ))}
       </div>
@@ -140,7 +134,7 @@ export default function CampeonesPage() {
         <div className="flex-shrink-0 px-4 pt-3 pb-2.5 flex flex-col gap-2.5" style={{ background: "var(--atlas-bg)" }}>
           {/* Confederación — chips */}
           <div className="flex gap-2">
-            {CONF_FILTERS.map(({ key, label }) => (
+            {CONF_KEYS.map((key) => (
               <button
                 key={key}
                 onClick={() => setConf(key)}
@@ -152,7 +146,7 @@ export default function CampeonesPage() {
                   fontFamily: "var(--font-display)",
                 }}
               >
-                {label}
+                {key === "all" ? t("filter_all") : key}
               </button>
             ))}
           </div>
@@ -165,7 +159,7 @@ export default function CampeonesPage() {
                 onChange={(e) => setDecade(e.target.value)}
                 style={{ ...selectStyle, fontFamily: "var(--font-display)" }}
               >
-                <option value="all">Todas las décadas</option>
+                <option value="all">{t("all_decades")}</option>
                 {decades.map((d) => (
                   <option key={d} value={String(d)}>{d}s</option>
                 ))}
@@ -177,7 +171,7 @@ export default function CampeonesPage() {
                 onChange={(e) => setCountry(e.target.value)}
                 style={{ ...selectStyle, fontFamily: "var(--font-display)" }}
               >
-                <option value="all">Todos los países</option>
+                <option value="all">{t("all_countries")}</option>
                 {countries.map(([name, flag]) => (
                   <option key={name} value={name}>{flag} {name}</option>
                 ))}
@@ -193,7 +187,7 @@ export default function CampeonesPage() {
             {filtered.length === 0 && (
               <div className="flex flex-col items-center justify-center gap-3 py-16">
                 <span className="text-[40px]">🔍</span>
-                <span className="text-[13px] text-atlas-muted text-center">Sin resultados para ese filtro</span>
+                <span className="text-[13px] text-atlas-muted text-center">{t("no_results")}</span>
               </div>
             )}
             {filtered.map((c) => (
@@ -237,12 +231,12 @@ export default function CampeonesPage() {
                     {c.score}
                   </div>
                 </div>
-                <div className="text-[12px] text-atlas-dimmed">vs {c.runnerUp} · FINAL</div>
+                <div className="text-[12px] text-atlas-dimmed">vs {c.runnerUp} · {t("final_label")}</div>
               </div>
             ))}
             {filtered.some((c) => c.year === 1950) && (
               <p className="text-[10px] text-atlas-dimmed text-center pb-2">
-                † 1950: fase final en grupo (partido decisivo Uruguay 2-1 Brasil)
+                {t("note_1950")}
               </p>
             )}
           </>
@@ -250,7 +244,7 @@ export default function CampeonesPage() {
 
         {tab === "palmares" && (
           <div className="flex flex-col gap-1.5 pt-1">
-            {PALMARES.map((t, i) => (
+            {PALMARES.map((entry, i) => (
               <div
                 key={i}
                 className="flex items-center gap-3 px-4 py-3 rounded-xl"
@@ -259,15 +253,15 @@ export default function CampeonesPage() {
                 <span style={{ fontFamily: "var(--font-display)" }} className="w-6 text-[16px] font-bold text-atlas-dimmed text-center">
                   {i + 1}
                 </span>
-                <span className="text-[24px]">{t.flag}</span>
-                <span className="flex-1 text-[14px] font-semibold text-atlas-text">{t.name}</span>
+                <span className="text-[24px]">{entry.flag}</span>
+                <span className="flex-1 text-[14px] font-semibold text-atlas-text">{entry.name}</span>
                 <div className="flex gap-0.5">
-                  {Array.from({ length: t.titles }).map((_, j) => (
+                  {Array.from({ length: entry.titles }).map((_, j) => (
                     <span key={j} className="text-[14px]">🏆</span>
                   ))}
                 </div>
                 <span style={{ fontFamily: "var(--font-display)" }} className="w-5 text-[22px] font-extrabold text-atlas-primary text-right">
-                  {t.titles}
+                  {entry.titles}
                 </span>
               </div>
             ))}

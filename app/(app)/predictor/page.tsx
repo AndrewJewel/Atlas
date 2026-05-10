@@ -2,6 +2,7 @@
 export const dynamic = "force-dynamic";
 import { useState, useEffect, useCallback } from "react";
 import { AppHeader } from "@/components/app-header";
+import { useLanguage } from "@/contexts/language-context";
 import { MATCHES } from "@/lib/data";
 import { TeamFlag } from "@/components/flags/TeamFlag";
 import { useUser } from "@/hooks/use-user";
@@ -18,16 +19,15 @@ import {
   type PredWinner,
 } from "@/lib/predictions";
 
-const DAY_LABEL: Record<string, string> = {
-  "2026-06-11": "JUE 11 JUN", "2026-06-12": "VIE 12 JUN",
-  "2026-06-13": "SÁB 13 JUN", "2026-06-14": "DOM 14 JUN",
-};
+const LOCALE_MAP: Record<string, string> = { es: "es-AR", en: "en-US", pt: "pt-BR" };
 
-const TABS = [
-  { key: "pending", label: "Pendientes" },
-  { key: "ranking", label: "Ranking" },
-] as const;
-type Tab = typeof TABS[number]["key"];
+function formatMatchDay(date: string, locale: string): string {
+  const d = new Date(date + "T12:00:00");
+  return d.toLocaleDateString(locale, { weekday: "short", day: "numeric", month: "short" }).toUpperCase();
+}
+
+const TAB_KEYS = ["pending", "ranking"] as const;
+type Tab = typeof TAB_KEYS[number];
 
 type Draft = { home: string; away: string; winner: PredWinner | null };
 
@@ -39,17 +39,20 @@ function deriveWinner(h: string, a: string): PredWinner | null {
   return "draw";
 }
 
-function levelFromPoints(pts: number): string {
-  if (pts >= 60) return "Leyenda";
-  if (pts >= 30) return "Experto";
-  if (pts >= 10) return "Hincha";
-  return "Aficionado";
-}
 
 
 export default function PredictorPage() {
   const { user } = useUser();
+  const { lang, t } = useLanguage();
+  const locale = LOCALE_MAP[lang] ?? "es-AR";
   const [tab, setTab] = useState<Tab>("pending");
+
+  function levelFromPoints(pts: number): string {
+    if (pts >= 60) return t("level_3");
+    if (pts >= 30) return t("level_2");
+    if (pts >= 10) return t("level_1");
+    return t("level_0");
+  }
   const [preds, setPreds] = useState<SavedPrediction[]>([]);
   const [drafts, setDrafts] = useState<Record<number, Draft>>({});
   const [saving, setSaving] = useState<number | null>(null);
@@ -129,7 +132,7 @@ export default function PredictorPage() {
 
   return (
     <div className="flex flex-col flex-1">
-      <AppHeader title="Juego de predicción" />
+      <AppHeader title={t("predictor_title")} />
 
       {/* Stats Bar */}
       <div
@@ -137,11 +140,11 @@ export default function PredictorPage() {
         style={{ background: "var(--atlas-surface)", borderBottom: "1px solid var(--atlas-border)" }}
       >
         {[
-          { val: level,              key: "NIVEL",       color: "var(--atlas-text)" },
+          { val: level,              key: t("level_label"),     color: "var(--atlas-text)" },
           null,
-          { val: `${predicted}`,     key: "PREDICHAS",   color: "#22C55E" },
+          { val: `${predicted}`,     key: t("predicted_label"), color: "#22C55E" },
           null,
-          { val: `${totalPoints}`,   key: "MIS PUNTOS",  color: "#F97316" },
+          { val: `${totalPoints}`,   key: t("points_label"),    color: "#F97316" },
         ].map((item, i) =>
           item === null ? (
             <div key={i} className="w-px h-8" style={{ background: "var(--atlas-glass-md)" }} />
@@ -161,7 +164,7 @@ export default function PredictorPage() {
         className="flex overflow-x-auto flex-shrink-0"
         style={{ background: "var(--atlas-surface)", borderBottom: "1px solid var(--atlas-border)" }}
       >
-        {TABS.map(({ key, label }) => (
+        {TAB_KEYS.map((key) => (
           <button
             key={key}
             onClick={() => setTab(key)}
@@ -173,7 +176,7 @@ export default function PredictorPage() {
               borderBottomColor: tab === key ? "#F97316" : "transparent",
             }}
           >
-            {label}
+            {key === "pending" ? t("tab_pending") : t("tab_ranking")}
           </button>
         ))}
       </div>
@@ -188,7 +191,7 @@ export default function PredictorPage() {
               <div className="flex flex-col items-center justify-center gap-4 p-8 min-h-[300px]">
                 <span className="text-[48px]">✅</span>
                 <span className="text-[14px] text-atlas-muted text-center">
-                  ¡Completaste todas las predicciones disponibles!
+                  {t("all_done")}
                 </span>
               </div>
             )}
@@ -205,7 +208,7 @@ export default function PredictorPage() {
                     className="text-[10px] font-bold tracking-widest text-atlas-primary mb-3"
                     style={{ fontFamily: "var(--font-display)" }}
                   >
-                    {DAY_LABEL[m.date] ?? m.date}
+                    {formatMatchDay(m.date, locale)}
                   </div>
 
                   <div className="flex items-center justify-between gap-2 mb-3">
@@ -273,7 +276,7 @@ export default function PredictorPage() {
                       opacity: canSave ? 1 : 0.6,
                     }}
                   >
-                    {saving === m.id ? "Guardando…" : "Guardar Marcador"}
+                    {saving === m.id ? t("saving") : t("save_score")}
                   </button>
                 </div>
               );
@@ -286,7 +289,7 @@ export default function PredictorPage() {
           <div className="px-4 pt-3 pb-4">
             {/* Group selector */}
             <div className="flex gap-2 mb-3 overflow-x-auto pb-1">
-              {[{ id: "global", name: "Global" }, ...groups].map((g) => (
+              {[{ id: "global", name: t("global_label") }, ...groups].map((g) => (
                 <button
                   key={g.id}
                   onClick={() => setActiveGroup(g.id)}
@@ -304,13 +307,13 @@ export default function PredictorPage() {
 
             {loadingRank ? (
               <div className="flex justify-center py-12">
-                <span className="text-atlas-muted text-[14px]">Cargando…</span>
+                <span className="text-atlas-muted text-[14px]">{t("loading")}</span>
               </div>
             ) : ranking.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-4 p-8 min-h-[200px]">
                 <span className="text-[48px]">🏆</span>
                 <span className="text-[14px] text-atlas-muted text-center">
-                  Aún no hay predicciones en este ranking.
+                  {t("no_ranking")}
                 </span>
               </div>
             ) : (
@@ -337,10 +340,10 @@ export default function PredictorPage() {
                         {r.team_flag ?? "⭐"}
                       </div>
                       <span className="flex-1 text-[14px] font-semibold text-atlas-text">
-                        {r.username}{isMe ? " (Tú)" : ""}
+                        {r.username}{isMe ? t("you_suffix") : ""}
                       </span>
                       <span style={{ fontFamily: "var(--font-display)" }} className="text-[18px] font-bold text-atlas-primary">
-                        {r.total_points} pts
+                        {r.total_points}{t("pts_suffix")}
                       </span>
                     </div>
                   );

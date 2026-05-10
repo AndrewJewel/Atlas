@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { useUser } from "@/hooks/use-user";
+import { useLanguage } from "@/contexts/language-context";
 import { supabase } from "@/lib/supabase";
 import type { Message, Avatar } from "@/lib/types";
 
@@ -24,7 +25,7 @@ function rowToMessage(row: DbRow, myId: string): Message {
     user: row.username,
     avatar,
     content: row.content,
-    time: new Date(row.created_at).toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" }),
+    time: new Date(row.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     type: row.user_id === myId ? "me" : "user",
   };
 }
@@ -33,6 +34,7 @@ export default function ChatPage() {
   const { groupId } = useParams<{ groupId: string }>();
   const searchParams = useSearchParams();
   const { user } = useUser();
+  const { t } = useLanguage();
   const groupName = searchParams.get("name") ?? "";
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -123,7 +125,7 @@ export default function ChatPage() {
             user: "Atlas IA",
             avatar: { emoji: "🤖", bg: "#F97316" },
             content: resData.reply,
-            time: new Date().toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" }),
+            time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
             type: "atlas",
           },
         ]);
@@ -145,7 +147,7 @@ export default function ChatPage() {
           <div style={{ fontFamily: "var(--font-display)" }} className="text-[18px] font-bold text-atlas-text tracking-tight">
             {groupName || "Chat"} 💬
           </div>
-          <div className="text-[12px] text-atlas-primary">Atlas IA activo</div>
+          <div className="text-[12px] text-atlas-primary">{t("atlas_active")}</div>
         </div>
         <button onClick={() => setShowInfo(!showInfo)} className="text-[22px] text-atlas-muted">⋯</button>
       </div>
@@ -156,8 +158,8 @@ export default function ChatPage() {
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center text-[18px]" style={{ background: "#F97316" }}>🤖</div>
             <div>
-              <div className="text-[13px] font-bold text-atlas-text">Atlas IA está en el grupo</div>
-              <div className="text-[12px] text-atlas-muted">Mencionalo con @Atlas o hazle preguntas</div>
+              <div className="text-[13px] font-bold text-atlas-text">{t("atlas_in_group")}</div>
+              <div className="text-[12px] text-atlas-muted">{t("mention_atlas")}</div>
             </div>
           </div>
         </div>
@@ -168,7 +170,7 @@ export default function ChatPage() {
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center flex-1 gap-2 opacity-40">
             <span className="text-[40px]">💬</span>
-            <span className="text-[14px] text-atlas-muted">Sé el primero en escribir</span>
+            <span className="text-[14px] text-atlas-muted">{t("first_to_write")}</span>
           </div>
         )}
         {messages.map((msg) => {
@@ -229,7 +231,7 @@ export default function ChatPage() {
         <input
           className="flex-1 px-4 py-2.5 rounded-3xl text-atlas-text text-[14px] outline-none"
           style={{ background: "var(--atlas-surface2)", border: "1px solid var(--atlas-glass-md)", fontFamily: "var(--font-sans)" }}
-          placeholder="Mensaje… o @Atlas para preguntar"
+          placeholder={t("chat_placeholder")}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && sendMessage()}
