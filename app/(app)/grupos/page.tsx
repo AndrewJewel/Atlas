@@ -189,7 +189,7 @@ export default function GruposPage() {
                 }}
               >
                 <div className="text-[10px] font-bold tracking-[0.2em] uppercase text-atlas-dimmed text-center mb-2">
-                  {t("group_code") ?? "Código del grupo"}
+                  Código del grupo
                 </div>
                 <div
                   className="text-center mb-3"
