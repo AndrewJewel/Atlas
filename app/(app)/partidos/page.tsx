@@ -6,8 +6,10 @@ import { useCountdown } from "@/hooks/use-countdown";
 import { useLiveScores } from "@/hooks/use-live-scores";
 import { useUser } from "@/hooks/use-user";
 import { useLanguage } from "@/contexts/language-context";
-import { MATCHES, MATCH_DAYS, KICKOFF } from "@/lib/data";
+import { MATCHES, MATCH_DAYS, KICKOFF, WC_GROUPS } from "@/lib/data";
 import { TeamFlag } from "@/components/flags/TeamFlag";
+
+const WC_GROUP_IDS = Object.keys(WC_GROUPS);
 
 const NOTIF_KEY = "atlas-notif";
 
@@ -59,6 +61,7 @@ function toLocalKickoff(date: string, etTime: string): { time: string; dayShifte
 
 export default function PartidosPage() {
   const [activeDay, setActiveDay] = useState(0);
+  const [activeWC, setActiveWC] = useState("A");
   const [notified, setNotified] = useState<Record<number, boolean>>({});
   const countdown = useCountdown(KICKOFF);
   const { scores, hasLive } = useLiveScores();
@@ -271,6 +274,73 @@ export default function PartidosPage() {
             </div>
           );
         })}
+
+        {/* ── WC Standings ──────────────────────────────────────── */}
+        <div className="mx-4 mt-6 mb-2">
+          <div style={{ fontFamily: "var(--font-display)" }} className="text-[20px] font-bold text-atlas-text mb-3 tracking-tight">
+            {t("standings")}
+          </div>
+
+          <div className="flex gap-1.5 mb-3 overflow-x-auto pb-1">
+            {WC_GROUP_IDS.map((g) => (
+              <button
+                key={g}
+                onClick={() => setActiveWC(g)}
+                className="flex-shrink-0 px-3.5 py-1.5 rounded-full text-[13px] font-bold transition-all"
+                style={{
+                  fontFamily: "var(--font-display)",
+                  background: activeWC === g ? "#F97316" : "var(--atlas-surface2)",
+                  border: `1px solid ${activeWC === g ? "#F97316" : "var(--atlas-glass-md)"}`,
+                  color: activeWC === g ? "#fff" : "#8892B0",
+                }}
+              >
+                {g}
+              </button>
+            ))}
+          </div>
+
+          <div
+            className="rounded-2xl overflow-hidden"
+            style={{ background: "var(--atlas-surface)", border: "1px solid var(--atlas-border)" }}
+          >
+            <div
+              className="grid px-3.5 py-2.5"
+              style={{ gridTemplateColumns: "24px minmax(0,1fr) repeat(8, 22px)", borderBottom: "1px solid var(--atlas-border)", gap: 2 }}
+            >
+              {["#", t("table_selection"), "PJ", "G", "E", "P", "GF", "GC", "DG", "Pts"].map((h, i) => (
+                <span key={i} className="text-[9px] font-bold text-atlas-dimmed" style={{ textAlign: i === 0 || i > 1 ? "center" : "left" }}>
+                  {h}
+                </span>
+              ))}
+            </div>
+            {WC_GROUPS[activeWC].map((team, i) => (
+              <div
+                key={i}
+                className="grid px-3.5 py-2 items-center"
+                style={{
+                  gridTemplateColumns: "24px minmax(0,1fr) repeat(8, 22px)",
+                  borderBottom: "1px solid var(--atlas-glass-sm)",
+                  borderLeft: i < 2 ? "3px solid #22C55E" : "3px solid transparent",
+                  gap: 2,
+                }}
+              >
+                <span className="text-[11px] font-bold text-atlas-dimmed text-center">{i + 1}</span>
+                <div className="flex items-center gap-1 min-w-0">
+                  <TeamFlag code={team.code} size="xs" shape="rounded" />
+                  <span className="text-[12px] font-medium text-atlas-text truncate">{team.name}</span>
+                </div>
+                {[team.pj, team.g, team.e, team.p, team.gf, team.gc, team.dg].map((v, j) => (
+                  <span key={j} className="text-[11px] text-atlas-muted text-center">{v}</span>
+                ))}
+                <span className="text-[12px] font-extrabold text-atlas-text text-center">{team.pts}</span>
+              </div>
+            ))}
+            <div className="flex items-center gap-1.5 px-3.5 py-2">
+              <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: "#22C55E" }} />
+              <span className="text-[11px] text-atlas-dimmed">{t("qualify_note")}</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
