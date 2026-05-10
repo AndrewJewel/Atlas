@@ -694,6 +694,14 @@ export default function PredictorPage() {
                                         : entry.bet.predicted_winner === "away" ? m.away.name
                                         : "Empate";
 
+                                      const actualWinner = liveScore?.status === "finished"
+                                        ? liveScore.home_score > liveScore.away_score ? "home"
+                                          : liveScore.away_score > liveScore.home_score ? "away"
+                                          : "draw"
+                                        : null;
+                                      const winnerCorrect = actualWinner && entry.bet?.predicted_winner === actualWinner;
+                                      const winnerWrong = actualWinner && entry.bet && entry.bet.predicted_winner !== actualWinner;
+
                                       return (
                                         <div
                                           key={entry.user_id}
@@ -718,28 +726,33 @@ export default function PredictorPage() {
                                               <span className="text-[11px] text-atlas-primary ml-1">{t("you_suffix")}</span>
                                             )}
                                             {entry.bet && winnerName && (
-                                              <div className="text-[10px] text-atlas-muted">{winnerName}</div>
+                                              <div
+                                                className="text-[10px] font-semibold"
+                                                style={{
+                                                  color: winnerCorrect ? "#22C55E" : winnerWrong ? "#EF4444" : "#4A5178",
+                                                }}
+                                              >
+                                                {winnerName}
+                                              </div>
                                             )}
                                           </div>
-                                          <div className="flex flex-col items-end flex-shrink-0">
+                                          <div className="flex flex-col items-end flex-shrink-0 gap-0.5">
                                             {entry.bet ? (
                                               <>
                                                 {entry.bet.home_score !== null && entry.bet.away_score !== null && (
                                                   <span
-                                                    className="text-[16px] font-bold leading-none"
+                                                    className="text-[15px] font-bold leading-none"
                                                     style={{ fontFamily: "var(--font-display)", color: "#F97316" }}
                                                   >
                                                     {entry.bet.home_score}–{entry.bet.away_score}
                                                   </span>
                                                 )}
-                                                {hasResult && (
-                                                  <span
-                                                    className="text-[13px] font-bold"
-                                                    style={{ color: pts > 0 ? "#22C55E" : "#4A5178" }}
-                                                  >
-                                                    {pts > 0 ? `+${pts}` : "0"} pts
-                                                  </span>
-                                                )}
+                                                <span
+                                                  className="text-[12px] font-bold"
+                                                  style={{ color: hasResult ? (pts > 0 ? "#22C55E" : "#4A5178") : "#4A5178" }}
+                                                >
+                                                  {hasResult ? (pts > 0 ? `+${pts}` : "0") : "·"} pts
+                                                </span>
                                               </>
                                             ) : (
                                               <span className="text-[11px] text-atlas-dimmed italic">{t("pp_no_pred")}</span>
