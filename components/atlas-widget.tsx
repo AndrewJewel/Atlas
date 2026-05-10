@@ -172,16 +172,11 @@ export function AtlasWidget({ user }: { user: User }) {
         </motion.div>
       )}
 
-      {/* Chat Panel */}
+      {/* Chat Panel — pantalla completa */}
       {open && (
         <div
-          className="fixed bottom-20 left-3 right-3 z-50 flex flex-col rounded-[20px] overflow-hidden"
-          style={{
-            background: "#0F1228",
-            border: "1px solid rgba(249,115,22,0.25)",
-            boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
-            maxHeight: "70vh",
-          }}
+          className="fixed inset-0 z-50 flex flex-col"
+          style={{ background: "var(--atlas-bg)" }}
         >
           {/* Header */}
           <div
@@ -214,7 +209,7 @@ export function AtlasWidget({ user }: { user: User }) {
           </div>
 
           {/* Messages */}
-          <div ref={listRef} className="flex flex-col gap-2 p-3 overflow-y-auto" style={{ minHeight: 120, maxHeight: 300 }}>
+          <div ref={listRef} className="flex-1 flex flex-col gap-2 p-3 overflow-y-auto">
             {messages.map((m, i) => (
               <div key={i} className={`flex gap-1.5 items-end ${m.role === "user" ? "justify-end" : "justify-start"}`}>
                 {m.role === "atlas" && (
