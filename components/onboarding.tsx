@@ -1,5 +1,6 @@
 "use client";
 import { useState, useMemo } from "react";
+import Image from "next/image";
 import { WC_TEAMS } from "@/lib/data";
 import { AuthForm } from "@/components/auth-form";
 import type { Team } from "@/lib/types";
@@ -65,7 +66,7 @@ export function Onboarding({ startAtStep = 0, onComplete }: Props) {
         <div className="flex flex-col flex-1 items-center px-6 pt-5 pb-4">
           <Logo />
           <div className="flex-1" />
-          <span className="text-[56px] leading-none mb-4">🏆</span>
+          <Image src="/trophy.png" alt="FIFA World Cup Trophy" width={120} height={120} className="mb-4 drop-shadow-2xl" />
           <div className="text-center mb-3">
             <div
               style={{ fontFamily: "var(--font-display)" }}

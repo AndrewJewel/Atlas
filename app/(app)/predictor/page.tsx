@@ -6,6 +6,7 @@ import { useLanguage } from "@/contexts/language-context";
 import { MATCHES } from "@/lib/data";
 import { TeamFlag } from "@/components/flags/TeamFlag";
 import { TrophyIcon } from "@/components/TrophyIcon";
+import Image from "next/image";
 import { useUser } from "@/hooks/use-user";
 import {
   savePrediction,
@@ -312,7 +313,7 @@ export default function PredictorPage() {
               </div>
             ) : ranking.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-4 p-8 min-h-[200px]">
-                <TrophyIcon size={48} color="#F97316" />
+                <Image src="/trophy.png" alt="Trophy" width={90} height={90} className="drop-shadow-lg" />
                 <span className="text-[14px] text-atlas-muted text-center">
                   {t("no_ranking")}
                 </span>
