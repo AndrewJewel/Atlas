@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
     title: groupName ? `${senderName ?? "Alguien"} · ${groupName}` : (senderName ?? "Nuevo mensaje"),
     body: truncated,
     icon: "/icon-192.png",
-    badge: "/icon-192.png",
+    badge: "/badge.png",
     tag: `chat-${groupId}`,
     url: `/grupos/chat/${groupId}${groupName ? `?name=${encodeURIComponent(groupName)}` : ""}`,
   });
