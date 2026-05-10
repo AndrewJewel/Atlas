@@ -654,21 +654,6 @@ export default function PredictorPage() {
                                         </button>
                                       </div>
 
-                                      {/* Draw button */}
-                                      <div className="flex justify-center mb-2.5">
-                                        <button
-                                          onClick={() => toggleBetWinner("draw")}
-                                          className="px-4 py-1.5 rounded-full text-[11px] font-semibold transition-all"
-                                          style={{
-                                            background: betDraft.winner === "draw" ? "rgba(249,115,22,0.15)" : "var(--atlas-glass-sm)",
-                                            border: `1.5px solid ${betDraft.winner === "draw" ? "#F97316" : "var(--atlas-glass-md)"}`,
-                                            color: betDraft.winner === "draw" ? "#F97316" : "#8892B0",
-                                          }}
-                                        >
-                                          Empate
-                                        </button>
-                                      </div>
-
                                       <button
                                         onClick={() => handleSaveBet(m.id)}
                                         disabled={!canSaveBet}
