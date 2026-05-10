@@ -21,6 +21,7 @@ export function AtlasWidget({ user }: { user: User }) {
   const [open, setOpen] = useState(false);
   const fabX = useMotionValue(0);
   const fabY = useMotionValue(0);
+  const didDrag = useRef(false);
   // FAB size=60, height con sombra ≈ 71px. Posición base: bottom-24 (96px), right-4 (16px)
   // Constraints en px relativos al punto de anclaje fijo.
   const FAB_W = 60;
@@ -147,8 +148,9 @@ export function AtlasWidget({ user }: { user: User }) {
             cursor: "grab",
           }}
           whileDrag={{ cursor: "grabbing", scale: 1.08 }}
-          onTap={() => setOpen(true)}
+          onDragStart={() => { didDrag.current = true; }}
           onDragEnd={() => {
+            setTimeout(() => { didDrag.current = false; }, 100);
             try {
               localStorage.setItem(
                 "atlas-fab-pos",
@@ -156,6 +158,7 @@ export function AtlasWidget({ user }: { user: User }) {
               );
             } catch { /* sin persistencia */ }
           }}
+          onTap={() => { if (!didDrag.current) setOpen(true); }}
         >
           <AgentAvatar size={60} status="idle" name="atlas-fab" />
         </motion.div>
