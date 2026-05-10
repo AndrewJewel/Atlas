@@ -1,11 +1,10 @@
 "use client";
 export const dynamic = "force-dynamic";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { AppHeader } from "@/components/app-header";
 import { useLanguage } from "@/contexts/language-context";
 import { MATCHES } from "@/lib/data";
 import { TeamFlag } from "@/components/flags/TeamFlag";
-import { TrophyIcon } from "@/components/TrophyIcon";
 import Image from "next/image";
 import { useUser } from "@/hooks/use-user";
 import {
@@ -14,11 +13,13 @@ import {
   getGlobalRanking,
   getGroupRanking,
   getUserGroups,
+  getMatchGroupPredictions,
   isMatchLocked,
   type SavedPrediction,
   type RankingEntry,
   type UserGroup,
   type PredWinner,
+  type MatchMemberPred,
 } from "@/lib/predictions";
 
 const LOCALE_MAP: Record<string, string> = { es: "es-AR", en: "en-US", pt: "pt-BR" };
@@ -28,7 +29,7 @@ function formatMatchDay(date: string, locale: string): string {
   return d.toLocaleDateString(locale, { weekday: "short", day: "numeric", month: "short" }).toUpperCase();
 }
 
-const TAB_KEYS = ["pending", "ranking"] as const;
+const TAB_KEYS = ["torneo", "por_partido", "ranking"] as const;
 type Tab = typeof TAB_KEYS[number];
 
 type Draft = { home: string; away: string; winner: PredWinner | null };
@@ -41,13 +42,11 @@ function deriveWinner(h: string, a: string): PredWinner | null {
   return "draw";
 }
 
-
-
 export default function PredictorPage() {
   const { user } = useUser();
   const { lang, t } = useLanguage();
   const locale = LOCALE_MAP[lang] ?? "es-AR";
-  const [tab, setTab] = useState<Tab>("pending");
+  const [tab, setTab] = useState<Tab>("torneo");
 
   function levelFromPoints(pts: number): string {
     if (pts >= 60) return t("level_3");
@@ -55,13 +54,25 @@ export default function PredictorPage() {
     if (pts >= 10) return t("level_1");
     return t("level_0");
   }
+
+  // ── Torneo state ──────────────────────────────────────
   const [preds, setPreds] = useState<SavedPrediction[]>([]);
   const [drafts, setDrafts] = useState<Record<number, Draft>>({});
   const [saving, setSaving] = useState<number | null>(null);
-  const [ranking, setRanking] = useState<RankingEntry[]>([]);
+
+  // ── Shared: groups ────────────────────────────────────
   const [groups, setGroups] = useState<UserGroup[]>([]);
+
+  // ── Ranking state ─────────────────────────────────────
+  const [ranking, setRanking] = useState<RankingEntry[]>([]);
   const [activeGroup, setActiveGroup] = useState<string>("global");
   const [loadingRank, setLoadingRank] = useState(false);
+
+  // ── Por partido state ─────────────────────────────────
+  const [ppGroupId, setPpGroupId] = useState<string>("");
+  const [selectedMatchId, setSelectedMatchId] = useState<number | null>(null);
+  const [matchMembers, setMatchMembers] = useState<MatchMemberPred[]>([]);
+  const [loadingMembers, setLoadingMembers] = useState(false);
 
   const load = useCallback(async () => {
     if (!user?.id) return;
@@ -71,32 +82,38 @@ export default function PredictorPage() {
 
   useEffect(() => { load(); }, [load]);
 
+  // Load groups eagerly — shared by Ranking and Por partido
+  useEffect(() => {
+    if (!user?.id) return;
+    getUserGroups(user.id).then((grps) => {
+      setGroups(grps);
+      setPpGroupId((prev) => prev || grps[0]?.id || "");
+    });
+  }, [user?.id]);
+
+  // Ranking data
   useEffect(() => {
     if (tab !== "ranking") return;
     setLoadingRank(true);
-    const fetch = async () => {
-      try {
-        const [g, grps] = await Promise.all([
-          activeGroup === "global" ? getGlobalRanking() : getGroupRanking(activeGroup),
-          user?.id ? getUserGroups(user.id) : Promise.resolve([]),
-        ]);
-        setRanking(g);
-        setGroups(grps);
-      } catch {
-        setRanking([]);
-        setGroups([]);
-      } finally {
-        setLoadingRank(false);
-      }
-    };
-    fetch();
+    (activeGroup === "global" ? getGlobalRanking() : getGroupRanking(activeGroup))
+      .then(setRanking)
+      .catch(() => setRanking([]))
+      .finally(() => setLoadingRank(false));
   }, [tab, activeGroup]);
+
+  // Por partido: load group predictions when match or group changes
+  useEffect(() => {
+    if (!selectedMatchId || !ppGroupId) { setMatchMembers([]); return; }
+    setLoadingMembers(true);
+    getMatchGroupPredictions(selectedMatchId, ppGroupId)
+      .then(setMatchMembers)
+      .finally(() => setLoadingMembers(false));
+  }, [selectedMatchId, ppGroupId]);
 
   const predMap = new Map(preds.map((p) => [p.match_id, p]));
   const totalPoints = preds.reduce((s, p) => s + (p.points_earned ?? 0), 0);
   const predicted = preds.length;
   const level = levelFromPoints(totalPoints);
-
   const pendingMatches = MATCHES.filter((m) => !isMatchLocked(m) && !predMap.has(m.id));
 
   const updateScore = (matchId: number, side: "home" | "away", raw: string) => {
@@ -132,6 +149,22 @@ export default function PredictorPage() {
     setSaving(null);
   };
 
+  // All matches grouped by date for "Por partido"
+  const matchesByDate = useMemo(() => {
+    const map = new Map<string, (typeof MATCHES)[number][]>();
+    for (const m of MATCHES) {
+      if (!map.has(m.date)) map.set(m.date, []);
+      map.get(m.date)!.push(m);
+    }
+    return [...map.entries()].sort(([a], [b]) => a.localeCompare(b));
+  }, []);
+
+  const TAB_LABELS: Record<Tab, string> = {
+    torneo: t("tab_torneo"),
+    por_partido: t("tab_por_partido"),
+    ranking: t("tab_ranking"),
+  };
+
   return (
     <div className="flex flex-col flex-1">
       <AppHeader title={t("predictor_title")} />
@@ -142,11 +175,11 @@ export default function PredictorPage() {
         style={{ background: "var(--atlas-surface)", borderBottom: "1px solid var(--atlas-border)" }}
       >
         {[
-          { val: level,              key: t("level_label"),     color: "var(--atlas-text)" },
+          { val: level,            key: t("level_label"),     color: "var(--atlas-text)" },
           null,
-          { val: `${predicted}`,     key: t("predicted_label"), color: "#22C55E" },
+          { val: `${predicted}`,   key: t("predicted_label"), color: "#22C55E" },
           null,
-          { val: `${totalPoints}`,   key: t("points_label"),    color: "#F97316" },
+          { val: `${totalPoints}`, key: t("points_label"),    color: "#F97316" },
         ].map((item, i) =>
           item === null ? (
             <div key={i} className="w-px h-8" style={{ background: "var(--atlas-glass-md)" }} />
@@ -178,7 +211,7 @@ export default function PredictorPage() {
               borderBottomColor: tab === key ? "#F97316" : "transparent",
             }}
           >
-            {key === "pending" ? t("tab_pending") : t("tab_ranking")}
+            {TAB_LABELS[key]}
           </button>
         ))}
       </div>
@@ -186,15 +219,13 @@ export default function PredictorPage() {
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
 
-        {/* ── PENDIENTES ── */}
-        {tab === "pending" && (
-          <div className="px-4 pt-3 pb-4 flex flex-col gap-3">
+        {/* ── TORNEO ── */}
+        {tab === "torneo" && (
+          <div className="px-4 pt-3 pb-28 flex flex-col gap-3">
             {pendingMatches.length === 0 && (
               <div className="flex flex-col items-center justify-center gap-4 p-8 min-h-[300px]">
                 <span className="text-[48px]">✅</span>
-                <span className="text-[14px] text-atlas-muted text-center">
-                  {t("all_done")}
-                </span>
+                <span className="text-[14px] text-atlas-muted text-center">{t("all_done")}</span>
               </div>
             )}
             {pendingMatches.map((m) => {
@@ -214,7 +245,6 @@ export default function PredictorPage() {
                   </div>
 
                   <div className="flex items-center justify-between gap-2 mb-3">
-                    {/* Home */}
                     <button
                       onClick={() => toggleWinner(m.id, "home")}
                       className="flex-1 flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl transition-all"
@@ -229,7 +259,6 @@ export default function PredictorPage() {
                       </span>
                     </button>
 
-                    {/* Score inputs */}
                     <div className="flex flex-col items-center gap-1">
                       <div className="flex items-center gap-1.5">
                         <input
@@ -250,7 +279,6 @@ export default function PredictorPage() {
                       </div>
                     </div>
 
-                    {/* Away */}
                     <button
                       onClick={() => toggleWinner(m.id, "away")}
                       className="flex-1 flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl transition-all"
@@ -286,10 +314,232 @@ export default function PredictorPage() {
           </div>
         )}
 
+        {/* ── POR PARTIDO ── */}
+        {tab === "por_partido" && (
+          <>
+            {groups.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-4 p-8 min-h-[300px]">
+                <span className="text-[40px]">👥</span>
+                <span className="text-[14px] text-atlas-muted text-center">{t("pp_no_groups")}</span>
+              </div>
+            ) : (
+              <>
+                {/* Group filter */}
+                <div
+                  className="flex gap-2 px-4 pt-3 pb-2 overflow-x-auto flex-shrink-0"
+                  style={{ borderBottom: "1px solid var(--atlas-border)" }}
+                >
+                  {groups.map((g) => (
+                    <button
+                      key={g.id}
+                      onClick={() => setPpGroupId(g.id)}
+                      className="flex-shrink-0 px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all"
+                      style={{
+                        background: ppGroupId === g.id ? "#F97316" : "var(--atlas-surface2)",
+                        border: `1px solid ${ppGroupId === g.id ? "#F97316" : "var(--atlas-glass-md)"}`,
+                        color: ppGroupId === g.id ? "#fff" : "#8892B0",
+                      }}
+                    >
+                      {g.name}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Match list */}
+                <div className="px-4 pb-28">
+                  {matchesByDate.map(([date, dayMatches]) => (
+                    <div key={date}>
+                      {/* Date header */}
+                      <div
+                        className="text-[10px] font-bold tracking-[0.15em] uppercase text-atlas-dimmed py-2.5 sticky top-0 z-10"
+                        style={{ background: "var(--atlas-bg)" }}
+                      >
+                        {formatMatchDay(date, locale)}
+                      </div>
+
+                      {dayMatches.map((m) => {
+                        const isSelected = selectedMatchId === m.id;
+                        const hasPred = predMap.has(m.id);
+                        const locked = isMatchLocked(m);
+
+                        return (
+                          <div key={m.id} className="mb-1.5">
+                            {/* Match row */}
+                            <button
+                              onClick={() => setSelectedMatchId(isSelected ? null : m.id)}
+                              className="w-full flex items-center gap-2 px-3 py-2.5 rounded-2xl transition-all"
+                              style={{
+                                background: isSelected ? "rgba(249,115,22,0.1)" : "var(--atlas-surface)",
+                                border: `1px solid ${isSelected ? "rgba(249,115,22,0.35)" : "var(--atlas-border-card)"}`,
+                              }}
+                            >
+                              {/* Home */}
+                              <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                                <TeamFlag code={m.home.code} size="sm" />
+                                <span className="text-[12px] font-semibold text-atlas-text truncate">
+                                  {m.home.name}
+                                </span>
+                              </div>
+
+                              <span className="text-[10px] font-bold text-atlas-dimmed flex-shrink-0">vs</span>
+
+                              {/* Away */}
+                              <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
+                                <span className="text-[12px] font-semibold text-atlas-text truncate text-right">
+                                  {m.away.name}
+                                </span>
+                                <TeamFlag code={m.away.code} size="sm" />
+                              </div>
+
+                              {/* Prediction dot */}
+                              <div
+                                className="w-2 h-2 rounded-full flex-shrink-0 ml-1"
+                                style={{
+                                  background: hasPred
+                                    ? "#22C55E"
+                                    : locked
+                                    ? "var(--atlas-glass-md)"
+                                    : "rgba(249,115,22,0.4)",
+                                }}
+                              />
+                            </button>
+
+                            {/* Expanded predictions panel */}
+                            {isSelected && (
+                              <div
+                                className="rounded-2xl mt-1 overflow-hidden"
+                                style={{
+                                  background: "var(--atlas-surface)",
+                                  border: "1px solid var(--atlas-border-card)",
+                                }}
+                              >
+                                {/* Panel header */}
+                                <div
+                                  className="flex items-center justify-between px-4 py-3"
+                                  style={{ borderBottom: "1px solid var(--atlas-glass)" }}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <TeamFlag code={m.home.code} size="sm" />
+                                    <span className="text-[13px] font-bold text-atlas-text">{m.home.name}</span>
+                                  </div>
+                                  <span className="text-[14px]">{locked ? "🔒" : "⏳"}</span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-[13px] font-bold text-atlas-text">{m.away.name}</span>
+                                    <TeamFlag code={m.away.code} size="sm" />
+                                  </div>
+                                </div>
+
+                                {/* Members predictions */}
+                                {loadingMembers ? (
+                                  <div className="flex justify-center py-6">
+                                    <div className="w-6 h-6 rounded-full border-2 border-atlas-primary border-t-transparent animate-spin" />
+                                  </div>
+                                ) : matchMembers.length === 0 ? (
+                                  <div className="px-4 py-4 text-[13px] text-atlas-dimmed text-center">
+                                    Sin miembros en este grupo
+                                  </div>
+                                ) : (
+                                  matchMembers.map((member, idx) => {
+                                    const isMe = member.user_id === user?.id;
+                                    const winnerName = !member.pred ? null
+                                      : member.pred.predicted_winner === "home" ? m.home.name
+                                      : member.pred.predicted_winner === "away" ? m.away.name
+                                      : "Empate";
+                                    return (
+                                      <div
+                                        key={member.user_id}
+                                        className="flex items-center gap-3 px-4 py-3"
+                                        style={{
+                                          borderBottom: idx < matchMembers.length - 1
+                                            ? "1px solid var(--atlas-glass)"
+                                            : "none",
+                                          background: isMe ? "rgba(249,115,22,0.05)" : "transparent",
+                                        }}
+                                      >
+                                        {/* Avatar */}
+                                        <div
+                                          className="w-9 h-9 rounded-xl flex items-center justify-center text-[20px] flex-shrink-0"
+                                          style={{ background: member.avatar?.bg ?? "#F97316" }}
+                                        >
+                                          {member.avatar?.emoji ?? "⭐"}
+                                        </div>
+
+                                        {/* Name */}
+                                        <div className="flex-1 min-w-0">
+                                          <span className="text-[13px] font-semibold text-atlas-text">
+                                            {member.username}
+                                          </span>
+                                          {isMe && (
+                                            <span className="text-[11px] text-atlas-primary ml-1">
+                                              {t("you_suffix")}
+                                            </span>
+                                          )}
+                                        </div>
+
+                                        {/* Prediction */}
+                                        {member.pred ? (
+                                          <div className="flex flex-col items-end flex-shrink-0">
+                                            {member.pred.home_score !== null && member.pred.away_score !== null && (
+                                              <span
+                                                className="text-[18px] font-bold leading-none"
+                                                style={{ fontFamily: "var(--font-display)", color: "#F97316" }}
+                                              >
+                                                {member.pred.home_score}–{member.pred.away_score}
+                                              </span>
+                                            )}
+                                            <span className="text-[10px] text-atlas-muted">{winnerName}</span>
+                                            {member.pred.points_earned !== null && (
+                                              <span
+                                                className="text-[11px] font-bold"
+                                                style={{
+                                                  color: member.pred.points_earned > 0 ? "#22C55E" : "#4A5178",
+                                                }}
+                                              >
+                                                {member.pred.points_earned > 0
+                                                  ? `+${member.pred.points_earned}`
+                                                  : "0"}pts
+                                              </span>
+                                            )}
+                                          </div>
+                                        ) : (
+                                          <span className="text-[11px] text-atlas-dimmed italic flex-shrink-0">
+                                            {t("pp_no_pred")}
+                                          </span>
+                                        )}
+                                      </div>
+                                    );
+                                  })
+                                )}
+
+                                {/* CTA to predict if match not locked and user hasn't predicted */}
+                                {!locked && !hasPred && (
+                                  <button
+                                    onClick={() => setTab("torneo")}
+                                    className="w-full py-3 text-[12px] font-semibold"
+                                    style={{
+                                      borderTop: "1px solid var(--atlas-glass)",
+                                      color: "#F97316",
+                                    }}
+                                  >
+                                    {t("pp_predict_cta")}
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </>
+        )}
+
         {/* ── RANKING ── */}
         {tab === "ranking" && (
           <div className="px-4 pt-3 pb-4">
-            {/* Group selector */}
             <div className="flex gap-2 mb-3 overflow-x-auto pb-1">
               {[{ id: "global", name: t("global_label") }, ...groups].map((g) => (
                 <button
@@ -314,12 +564,13 @@ export default function PredictorPage() {
             ) : ranking.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-4 p-8 min-h-[200px]">
                 <Image src="/trophy.png" alt="Trophy" width={90} height={90} className="drop-shadow-lg" />
-                <span className="text-[14px] text-atlas-muted text-center">
-                  {t("no_ranking")}
-                </span>
+                <span className="text-[14px] text-atlas-muted text-center">{t("no_ranking")}</span>
               </div>
             ) : (
-              <div className="rounded-[18px] overflow-hidden" style={{ background: "var(--atlas-surface)", border: "1px solid var(--atlas-border-card)" }}>
+              <div
+                className="rounded-[18px] overflow-hidden"
+                style={{ background: "var(--atlas-surface)", border: "1px solid var(--atlas-border-card)" }}
+              >
                 {ranking.map((r, i) => {
                   const pos = i + 1;
                   const isMe = r.user_id === user?.id;
@@ -344,7 +595,10 @@ export default function PredictorPage() {
                       <span className="flex-1 text-[14px] font-semibold text-atlas-text">
                         {r.username}{isMe ? t("you_suffix") : ""}
                       </span>
-                      <span style={{ fontFamily: "var(--font-display)" }} className="text-[18px] font-bold text-atlas-primary">
+                      <span
+                        style={{ fontFamily: "var(--font-display)" }}
+                        className="text-[18px] font-bold text-atlas-primary"
+                      >
                         {r.total_points}{t("pts_suffix")}
                       </span>
                     </div>

@@ -114,6 +114,49 @@ export async function getGroupRanking(groupId: string): Promise<RankingEntry[]> 
   }));
 }
 
+export type MatchMemberPred = {
+  user_id: string;
+  username: string;
+  avatar: { emoji: string; bg: string };
+  pred: (SavedPrediction & { user_id: string }) | null;
+};
+
+export async function getMatchGroupPredictions(
+  matchId: number,
+  groupId: string
+): Promise<MatchMemberPred[]> {
+  try {
+    const { data: members } = await supabase
+      .from("group_members")
+      .select("user_id, username, avatar")
+      .eq("group_id", groupId);
+
+    if (!members?.length) return [];
+
+    const memberIds = (members as { user_id: string }[]).map((m) => m.user_id);
+
+    const { data: preds } = await supabase
+      .from("predictions")
+      .select("id, match_id, user_id, home_score, away_score, predicted_winner, points_earned, created_at")
+      .eq("match_id", matchId)
+      .in("user_id", memberIds);
+
+    type RawPred = SavedPrediction & { user_id: string };
+    const predByUser = new Map<string, RawPred>(
+      ((preds ?? []) as RawPred[]).map((p) => [p.user_id, p])
+    );
+
+    return (members as { user_id: string; username: string; avatar: { emoji: string; bg: string } }[]).map((m) => ({
+      user_id: m.user_id,
+      username: m.username,
+      avatar: m.avatar,
+      pred: predByUser.get(m.user_id) ?? null,
+    }));
+  } catch {
+    return [];
+  }
+}
+
 export async function getUserGroups(userId: string): Promise<UserGroup[]> {
   try {
     const { data: members, error: me } = await supabase
