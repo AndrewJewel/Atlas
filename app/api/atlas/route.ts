@@ -1,4 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+
+function adminClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  );
+}
+
+async function getUserIdFromRequest(req: NextRequest): Promise<string | null> {
+  const auth = req.headers.get("Authorization");
+  const token = auth?.startsWith("Bearer ") ? auth.slice(7) : null;
+  if (!token) return null;
+  const sb = adminClient();
+  const { data: { user }, error } = await sb.auth.getUser(token);
+  if (error || !user) return null;
+  return user.id;
+}
 
 const SYSTEM_PROMPT = `Eres Atlas IA, el asistente fanático del fútbol de la app Atlas para el Mundial 2026.
 
@@ -19,6 +38,9 @@ Reglas de comportamiento:
 
 export async function POST(req: NextRequest) {
   try {
+    const userId = await getUserIdFromRequest(req);
+    if (!userId) return NextResponse.json({ reply: "No autorizado" }, { status: 401 });
+
     const body = await req.json();
     const { message, history = [], context = "widget" } = body as {
       message: string;
