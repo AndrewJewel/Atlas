@@ -82,154 +82,196 @@ export default function GruposPage() {
   }
 
   return (
-    <div className="flex flex-col flex-1">
+    <div className="flex flex-col flex-1" style={{ minHeight: 0 }}>
       <AppHeader title={t("tab_grupos")} />
-      <div className="flex-1 overflow-y-auto px-4 pt-3 pb-4">
 
-        {/* ── My Groups ─────────────────────────────────────────── */}
+      {loading ? (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-full border-2 border-atlas-primary border-t-transparent animate-spin" />
+        </div>
 
-        {loading ? (
-          <div className="rounded-[18px] mb-5 animate-pulse" style={{ background: "var(--atlas-surface)", height: 164 }} />
+      ) : groups.length === 0 ? (
+        /* ── Empty state — full-bleed hero ──────────────────── */
+        <div className="flex-1 flex flex-col items-center justify-center px-6 py-8 text-center">
+          <Image src="/trophy.png" alt="Trophy" width={140} height={140} className="drop-shadow-2xl mb-5" />
+          <p style={{ fontFamily: "var(--font-display)" }} className="text-[26px] font-black text-atlas-text mb-2 tracking-tight">
+            {t("compete_title")}
+          </p>
+          <p className="text-[14px] text-atlas-muted leading-relaxed max-w-sm mb-7">
+            {t("compete_sub")}
+          </p>
+          <div className="flex gap-3 w-full max-w-sm">
+            <button
+              onClick={() => setModal('create')}
+              className="flex-1 py-3.5 rounded-xl text-white text-[14px] font-bold"
+              style={{ background: "#F97316" }}
+            >
+              {t("create_group")}
+            </button>
+            <button
+              onClick={() => setModal('join')}
+              className="flex-1 py-3.5 rounded-xl text-[14px] font-semibold"
+              style={{ background: "var(--atlas-surface2)", border: "1px solid var(--atlas-glass-border)", color: "var(--atlas-text)" }}
+            >
+              {t("join_btn")}
+            </button>
+          </div>
+        </div>
 
-        ) : groups.length === 0 ? (
-          /* Empty state */
-          <div
-            className="rounded-[18px] p-6 mb-5 flex flex-col items-center text-center gap-3"
-            style={{ background: "linear-gradient(135deg,var(--atlas-surface3),var(--atlas-surface))", border: "1px solid rgba(249,115,22,0.2)" }}
-          >
-            <Image src="/trophy.png" alt="Trophy" width={80} height={80} className="drop-shadow-lg" />
-            <p className="text-[18px] font-bold text-atlas-text" style={{ fontFamily: "var(--font-display)" }}>
-              {t("compete_title")}
-            </p>
-            <p className="text-[13px] text-atlas-muted leading-relaxed">
-              {t("compete_sub")}
-            </p>
-            <div className="flex gap-3 w-full mt-1">
+      ) : (
+        <>
+          {/* Group tabs - compact strip */}
+          <div className="flex gap-2 px-4 pt-3 pb-2 overflow-x-auto flex-shrink-0">
+            {groups.map((g, i) => (
               <button
-                onClick={() => setModal('create')}
-                className="flex-1 py-3 rounded-xl text-white text-[14px] font-bold"
-                style={{ background: "#F97316" }}
+                key={g.id}
+                onClick={() => setActiveGroup(i)}
+                className="flex-shrink-0 px-4 py-1.5 rounded-full text-[13px] font-bold transition-all"
+                style={{
+                  fontFamily: "var(--font-display)",
+                  background: activeGroup === i ? "#F97316" : "var(--atlas-surface2)",
+                  border: `1px solid ${activeGroup === i ? "#F97316" : "var(--atlas-glass-md)"}`,
+                  color: activeGroup === i ? "#fff" : "#8892B0",
+                }}
               >
-                {t("create_group")}
+                {g.name}
               </button>
-              <button
-                onClick={() => setModal('join')}
-                className="flex-1 py-3 rounded-xl text-[14px] font-semibold"
-                style={{ background: "var(--atlas-surface2)", border: "1px solid var(--atlas-glass-border)", color: "var(--atlas-text)" }}
-              >
-                {t("join_btn")}
-              </button>
-            </div>
+            ))}
+            <button
+              onClick={() => setModal('create')}
+              className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-[18px] font-bold"
+              style={{ background: "var(--atlas-surface2)", border: "1px solid var(--atlas-glass-border)", color: "#8892B0" }}
+              aria-label="Crear grupo"
+            >
+              +
+            </button>
           </div>
 
-        ) : (
-          <>
-            {/* Group tabs */}
-            <div className="flex gap-2 mb-3 overflow-x-auto pb-1">
-              {groups.map((g, i) => (
-                <button
-                  key={g.id}
-                  onClick={() => setActiveGroup(i)}
-                  className="flex-shrink-0 px-4 py-1.5 rounded-full text-[13px] font-bold transition-all"
-                  style={{
-                    fontFamily: "var(--font-display)",
-                    background: activeGroup === i ? "#F97316" : "var(--atlas-surface2)",
-                    border: `1px solid ${activeGroup === i ? "#F97316" : "var(--atlas-glass-md)"}`,
-                    color: activeGroup === i ? "#fff" : "#8892B0",
-                  }}
-                >
-                  {g.name}
-                </button>
-              ))}
-              <button
-                onClick={() => setModal('create')}
-                className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-[18px] font-bold"
-                style={{ background: "var(--atlas-surface2)", border: "1px solid var(--atlas-glass-border)", color: "#8892B0" }}
-              >
-                +
-              </button>
-            </div>
-
-            {/* Active group card */}
-            {current && (
-              <div
-                className="rounded-[18px] p-4 mb-5"
-                style={{ background: "linear-gradient(135deg,var(--atlas-surface3),var(--atlas-surface))", border: "1px solid rgba(249,115,22,0.25)" }}
-              >
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <div style={{ fontFamily: "var(--font-display)" }} className="text-[20px] font-bold text-atlas-text tracking-tight">
-                      {current.name}
-                    </div>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[12px] font-mono text-atlas-dimmed">{current.code}</span>
-                      <button
-                        onClick={() => navigator.clipboard.writeText(current.code)}
-                        className="text-[10px] px-1.5 py-0.5 rounded font-bold"
-                        style={{ background: "rgba(249,115,22,0.15)", color: "#F97316" }}
-                      >
-                        {t("copy_code")}
-                      </button>
-                    </div>
+          {/* Active group hero — fills remaining space */}
+          {current && (
+            <div className="flex-1 overflow-y-auto px-5 pt-4 pb-6 flex flex-col" style={{ minHeight: 0 }}>
+              {/* Group name + delete (if creator) */}
+              <div className="flex items-start justify-between gap-3 mb-5">
+                <div className="flex-1 min-w-0">
+                  <div className="text-[10px] font-bold tracking-[0.2em] uppercase text-atlas-dimmed mb-1.5">
+                    {t("tab_grupos")}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => shareGroup(current)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white text-[12px] font-bold"
-                      style={{ background: "#F97316" }}
-                    >
-                      {t("share_btn")}
-                    </button>
-                    {current.created_by === user?.id && (
-                      <button
-                        onClick={() => setModal('delete')}
-                        className="w-8 h-8 rounded-full flex items-center justify-center transition-all"
-                        style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.2)" }}
-                        aria-label="Eliminar grupo"
-                      >
-                        <span className="text-[14px]">🗑️</span>
-                      </button>
-                    )}
+                  <h1
+                    style={{ fontFamily: "var(--font-display)" }}
+                    className="text-[30px] font-black text-atlas-text tracking-tight leading-none break-words"
+                  >
+                    {current.name}
+                  </h1>
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="text-[11px] font-semibold text-atlas-muted">
+                      {current.members.length} {current.members.length === 1 ? "miembro" : "miembros"}
+                    </span>
                   </div>
                 </div>
+                {current.created_by === user?.id && (
+                  <button
+                    onClick={() => setModal('delete')}
+                    className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-all"
+                    style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.2)" }}
+                    aria-label="Eliminar grupo"
+                  >
+                    <span className="text-[15px]">🗑️</span>
+                  </button>
+                )}
+              </div>
 
-                {/* Members */}
-                <div className="flex gap-2 flex-wrap mb-3">
+              {/* Code jumbo card */}
+              <div
+                className="rounded-3xl px-5 py-6 mb-6 relative overflow-hidden"
+                style={{
+                  background: "linear-gradient(135deg,var(--atlas-surface3),var(--atlas-surface))",
+                  border: "1px solid rgba(249,115,22,0.25)",
+                }}
+              >
+                <div className="text-[10px] font-bold tracking-[0.2em] uppercase text-atlas-dimmed text-center mb-2">
+                  {t("group_code") ?? "Código del grupo"}
+                </div>
+                <div
+                  className="text-center mb-3"
+                  style={{
+                    fontFamily: "var(--font-display)",
+                    color: "#F97316",
+                    fontSize: 40,
+                    fontWeight: 900,
+                    letterSpacing: "0.18em",
+                    lineHeight: 1,
+                  }}
+                >
+                  {current.code}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => shareGroup(current)}
+                    className="flex-1 py-2.5 rounded-xl text-white text-[13px] font-bold"
+                    style={{ background: "#25D366" }}
+                  >
+                    {t("share_btn")}
+                  </button>
+                  <button
+                    onClick={() => copyLink(current)}
+                    className="flex-1 py-2.5 rounded-xl text-[13px] font-semibold transition-colors"
+                    style={{
+                      background: "var(--atlas-surface2)",
+                      border: "1px solid var(--atlas-glass-md)",
+                      color: copied ? "#22C55E" : "var(--atlas-text)",
+                    }}
+                  >
+                    {copied ? t("link_copied") : t("copy_link")}
+                  </button>
+                </div>
+              </div>
+
+              {/* Members grid */}
+              <div className="mb-6">
+                <div className="text-[10px] font-bold tracking-[0.2em] uppercase text-atlas-dimmed mb-3">
+                  Miembros
+                </div>
+                <div
+                  className="grid gap-3"
+                  style={{ gridTemplateColumns: "repeat(auto-fill, minmax(70px, 1fr))" }}
+                >
                   {current.members.map((m, i) => (
-                    <div key={m.id ?? i} className="flex flex-col items-center gap-1">
+                    <div key={m.id ?? i} className="flex flex-col items-center gap-1.5">
                       <div
-                        className="w-10 h-10 rounded-xl flex items-center justify-center text-[20px]"
+                        className="w-[60px] h-[60px] rounded-2xl flex items-center justify-center text-[28px] shadow-md"
                         style={{ background: m.avatar?.bg ?? '#F97316' }}
                       >
                         {m.avatar?.emoji ?? '⭐'}
                       </div>
-                      <span className="text-[11px] text-atlas-muted">{m.username}</span>
+                      <span className="text-[11px] font-semibold text-atlas-text truncate max-w-full text-center" title={m.username}>
+                        {m.username}
+                      </span>
                     </div>
                   ))}
                 </div>
-
-                <div className="flex gap-2">
-                  <Link
-                    href={`/grupos/chat/${current.id}?name=${encodeURIComponent(current.name)}`}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-white text-[13px] font-bold"
-                    style={{ background: "#F97316", fontFamily: "var(--font-sans)" }}
-                  >
-                    {t("chat_btn")}
-                  </Link>
-                  <button
-                    onClick={() => setModal('join')}
-                    className="flex-1 py-2.5 rounded-xl text-[13px] font-semibold"
-                    style={{ background: "var(--atlas-glass)", border: "1px dashed var(--atlas-glass-border)", color: "#8892B0" }}
-                  >
-                    {t("invite_btn")}
-                  </button>
-                </div>
               </div>
-            )}
-          </>
-        )}
 
-      </div>
+              {/* CTAs at bottom */}
+              <div className="mt-auto flex gap-3 pt-2">
+                <Link
+                  href={`/grupos/chat/${current.id}?name=${encodeURIComponent(current.name)}`}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-3.5 rounded-xl text-white text-[14px] font-bold"
+                  style={{ background: "#F97316", fontFamily: "var(--font-sans)" }}
+                >
+                  {t("chat_btn")}
+                </Link>
+                <button
+                  onClick={() => setModal('join')}
+                  className="flex-1 py-3.5 rounded-xl text-[14px] font-semibold"
+                  style={{ background: "var(--atlas-glass)", border: "1px dashed var(--atlas-glass-border)", color: "#8892B0" }}
+                >
+                  {t("invite_btn")}
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
 
       {/* ── Bottom sheet modals ───────────────────────────────────── */}
 
