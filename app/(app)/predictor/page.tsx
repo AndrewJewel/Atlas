@@ -517,7 +517,6 @@ export default function PredictorPage() {
                         {dayMatches.map((m) => {
                           const isSelected = selectedMatchId === m.id;
                           const locked = isMatchLocked(m);
-                          const badge = isSelected ? statusBadge(liveScore, locked) : null;
                           const myBet = isSelected
                             ? groupBets.find((b) => b.user_id === user?.id)?.bet ?? null
                             : null;
@@ -583,41 +582,22 @@ export default function PredictorPage() {
                                   className="rounded-2xl mt-1 overflow-hidden"
                                   style={{ background: "var(--atlas-surface)", border: "1px solid var(--atlas-border-card)" }}
                                 >
-                                  {/* Match header */}
-                                  <div className="px-4 py-3" style={{ borderBottom: "1px solid var(--atlas-glass)" }}>
-                                    <div className="flex items-center justify-between mb-2">
-                                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                                        <TeamFlag code={m.home.code} size="sm" />
-                                        <span className="text-[13px] font-bold text-atlas-text truncate">{m.home.name}</span>
-                                      </div>
-                                      <div className="flex flex-col items-center flex-shrink-0 px-3">
-                                        {liveScore && liveScore.status !== "scheduled" ? (
-                                          <span
-                                            className="text-[22px] font-black leading-none"
-                                            style={{ fontFamily: "var(--font-display)", color: "#F97316" }}
-                                          >
-                                            {liveScore.home_score}–{liveScore.away_score}
-                                          </span>
-                                        ) : (
-                                          <span className="text-[13px] font-bold text-atlas-dimmed">vs</span>
-                                        )}
-                                      </div>
-                                      <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
-                                        <span className="text-[13px] font-bold text-atlas-text truncate text-right">{m.away.name}</span>
-                                        <TeamFlag code={m.away.code} size="sm" />
-                                      </div>
-                                    </div>
-                                    {badge && (
-                                      <div className="flex justify-center">
-                                        <span
-                                          className="text-[10px] font-bold px-2.5 py-0.5 rounded-full tracking-wide"
-                                          style={{ background: badge.bg, color: badge.color }}
-                                        >
-                                          {badge.label}
+                                  {/* Live score (only when match is live or finished) */}
+                                  {liveScore && liveScore.status !== "scheduled" && (
+                                    <div className="flex items-center justify-center gap-2 px-4 py-2.5" style={{ borderBottom: "1px solid var(--atlas-glass)" }}>
+                                      <span
+                                        className="text-[20px] font-black leading-none"
+                                        style={{ fontFamily: "var(--font-display)", color: "#F97316" }}
+                                      >
+                                        {liveScore.home_score}–{liveScore.away_score}
+                                      </span>
+                                      {liveScore.status === "live" && (
+                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(239,68,68,0.12)", color: "#EF4444" }}>
+                                          EN VIVO {liveScore.minute}
                                         </span>
-                                      </div>
-                                    )}
-                                  </div>
+                                      )}
+                                    </div>
+                                  )}
 
                                   {/* Inline bet form (only when not locked) */}
                                   {!locked && (
