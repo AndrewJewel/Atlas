@@ -114,6 +114,26 @@ export async function getGroupRanking(groupId: string): Promise<RankingEntry[]> 
   }));
 }
 
+export type LiveScore = {
+  home_score: number;
+  away_score: number;
+  status: "scheduled" | "live" | "finished";
+  minute: string;
+};
+
+export async function getMatchLiveScore(homeCode: string, awayCode: string): Promise<LiveScore | null> {
+  try {
+    const { data } = await supabase
+      .from("live_scores")
+      .select("home_score, away_score, status, minute")
+      .eq("id", `${homeCode}-${awayCode}`)
+      .maybeSingle();
+    return (data as LiveScore) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export type MatchMemberPred = {
   user_id: string;
   username: string;
