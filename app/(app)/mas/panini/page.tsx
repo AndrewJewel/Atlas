@@ -1,124 +1,210 @@
 "use client";
 export const dynamic = "force-dynamic";
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import { useUser } from "@/hooks/use-user";
+import { supabase } from "@/lib/supabase";
 
-type StickerState = "owned" | "dup" | "missing";
+type StickerRow = {
+  id: number; code: string; name: string;
+  team_code: string | null; team_name: string | null;
+  type: string; is_shiny: boolean; section: string;
+};
 
-const SECTIONS = [
-  { label: "México 🇲🇽",    stickers: Array.from({ length: 20 }, (_, i): StickerState => i < 14 ? "owned" : i < 16 ? "dup" : "missing") },
-  { label: "Argentina 🇦🇷",  stickers: Array.from({ length: 20 }, (_, i): StickerState => i < 11 ? "owned" : i < 13 ? "dup" : "missing") },
-  { label: "Brasil 🇧🇷",     stickers: Array.from({ length: 20 }, (_, i): StickerState => i < 16 ? "owned" : i < 18 ? "dup" : "missing") },
-  { label: "Francia 🇫🇷",    stickers: Array.from({ length: 20 }, (_, i): StickerState => i < 8 ? "owned" : i < 10 ? "dup" : "missing") },
-];
+type TeamCard = {
+  team_code: string; team_name: string; section: string;
+  flag: string; total: number; owned: number; dupes: number;
+};
 
-const TOTAL = 640;
-const OWNED = 287;
-const DUP   = 89;
-const PCT   = Math.round((OWNED / TOTAL) * 100);
+const FLAG: Record<string, string> = {
+  MEX:"mx",KOR:"kr",RSA:"za",CZE:"cz",CAN:"ca",SUI:"ch",QAT:"qa",BIH:"ba",
+  BRA:"br",MAR:"ma",SCO:"gb-sct",HAI:"ht",USA:"us",PAR:"py",AUS:"au",TUR:"tr",
+  GER:"de",ECU:"ec",CIV:"ci",CUW:"cw",NED:"nl",JPN:"jp",TUN:"tn",SWE:"se",
+  BEL:"be",IRN:"ir",EGY:"eg",NZL:"nz",ESP:"es",URU:"uy",KSA:"sa",CPV:"cv",
+  FRA:"fr",SEN:"sn",NOR:"no",IRQ:"iq",ARG:"ar",AUT:"at",ALG:"dz",JOR:"jo",
+  POR:"pt",COL:"co",UZB:"uz",COD:"cd",ENG:"gb-eng",CRO:"hr",PAN:"pa",GHA:"gh",
+};
 
-const FILTERS = [
-  { key: "all",     label: "Todas"    },
-  { key: "owned",   label: "Tengo"    },
-  { key: "dup",     label: "Repetidas" },
-  { key: "missing", label: "Faltan"   },
-] as const;
+const GROUPS = ["GRUPO A","GRUPO B","GRUPO C","GRUPO D","GRUPO E","GRUPO F",
+                 "GRUPO G","GRUPO H","GRUPO I","GRUPO J","GRUPO K","GRUPO L"];
 
 export default function PaniniPage() {
-  const [filter, setFilter] = useState<StickerState | "all">("all");
+  const { user } = useUser();
+  const [stickers, setStickers] = useState<StickerRow[]>([]);
+  const [owned, setOwned] = useState<Map<number, number>>(new Map());
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<"all"|"owned"|"missing">("all");
+
+  useEffect(() => {
+    if (!user) return;
+    Promise.all([
+      supabase.from("stickers").select("id,code,name,team_code,team_name,type,is_shiny,section").order("id"),
+      supabase.from("user_stickers").select("sticker_id,quantity").eq("user_id", user.id),
+    ]).then(([{ data: s }, { data: us }]) => {
+      setStickers(s ?? []);
+      const m = new Map<number, number>();
+      (us ?? []).forEach((r: { sticker_id: number; quantity: number }) => m.set(r.sticker_id, r.quantity));
+      setOwned(m);
+      setLoading(false);
+    });
+  }, [user]);
+
+  const fwcStickers = useMemo(() => stickers.filter(s => !s.team_code), [stickers]);
+  const fwcOwned = useMemo(() => fwcStickers.filter(s => (owned.get(s.id) ?? 0) >= 1).length, [fwcStickers, owned]);
+
+  const teams = useMemo<TeamCard[]>(() => {
+    const map = new Map<string, TeamCard>();
+    stickers.forEach(s => {
+      if (!s.team_code) return;
+      const key = s.team_code;
+      if (!map.has(key)) {
+        map.set(key, { team_code: s.team_code, team_name: s.team_name ?? s.team_code, section: s.section, flag: FLAG[s.team_code] ?? "", total: 0, owned: 0, dupes: 0 });
+      }
+      const t = map.get(key)!;
+      t.total++;
+      const qty = owned.get(s.id) ?? 0;
+      if (qty >= 1) t.owned++;
+      if (qty >= 2) t.dupes++;
+    });
+    return Array.from(map.values());
+  }, [stickers, owned]);
+
+  const filteredTeams = useMemo(() => {
+    if (filter === "all") return teams;
+    if (filter === "owned") return teams.filter(t => t.owned === t.total);
+    return teams.filter(t => t.owned < t.total);
+  }, [teams, filter, owned]);
+
+  const totalOwned = useMemo(() => [...owned.values()].filter(q => q >= 1).length, [owned]);
+  const totalDupes = useMemo(() => [...owned.values()].filter(q => q >= 2).length, [owned]);
+  const total = stickers.length;
+  const pct = total > 0 ? Math.round((totalOwned / total) * 100) : 0;
 
   return (
-    <div className="flex flex-col h-screen max-w-md mx-auto" style={{ background: "var(--atlas-bg)" }}>
+    <div style={{ position:"fixed", inset:0, display:"flex", flexDirection:"column", background:"var(--atlas-bg)", zIndex:55 }}>
       {/* Header */}
-      <div
-        className="flex items-center gap-3 px-4 py-3 flex-shrink-0"
-        style={{ background: "var(--atlas-surface)", borderBottom: "1px solid var(--atlas-border)" }}
-      >
-        <Link href="/mas" className="text-[22px] text-atlas-text">←</Link>
-        <span style={{ fontFamily: "var(--font-display)" }} className="text-[20px] font-bold text-atlas-text tracking-tight">
-          Álbum Panini
+      <div className="flex items-center gap-3 px-4 py-3 flex-shrink-0"
+        style={{ background:"var(--atlas-surface)", borderBottom:"1px solid var(--atlas-border)" }}>
+        <Link href="/mas" className="text-[22px] text-atlas-text leading-none">←</Link>
+        <span style={{ fontFamily:"var(--font-display)" }} className="text-[20px] font-bold text-atlas-text tracking-tight flex-1">
+          Álbum Panini 2026
         </span>
+        <Link href="/mas/panini/intercambios" className="text-[13px] font-semibold px-3 py-1.5 rounded-xl"
+          style={{ background:"rgba(249,115,22,0.12)", color:"#F97316", border:"1px solid rgba(249,115,22,0.25)" }}>
+          Intercambios
+        </Link>
       </div>
 
-      {/* Progress */}
-      <div
-        className="px-4 py-4 flex-shrink-0"
-        style={{ background: "var(--atlas-surface)", borderBottom: "1px solid var(--atlas-border)" }}
-      >
-        <div className="flex justify-around mb-3.5">
-          {[
-            { val: OWNED, label: "TENGO",     color: "#22C55E" },
-            { val: TOTAL - OWNED, label: "FALTAN",    color: "#EF4444" },
-            { val: DUP,   label: "REPETIDAS", color: "#F97316" },
-          ].map(({ val, label, color }) => (
-            <div key={label} className="flex flex-col items-center gap-0.5">
-              <span style={{ fontFamily: "var(--font-display)", color }} className="text-[28px] font-extrabold">
-                {val}
-              </span>
-              <span className="text-[11px] text-atlas-dimmed">{label}</span>
+      {loading ? (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-full border-2 border-atlas-primary border-t-transparent animate-spin" />
+        </div>
+      ) : (
+        <>
+          {/* Stats */}
+          <div className="px-4 py-3 flex-shrink-0" style={{ background:"var(--atlas-surface)", borderBottom:"1px solid var(--atlas-border)" }}>
+            <div className="flex justify-around mb-3">
+              {[
+                { val: totalOwned, label: "TENGO",     color: "#22C55E" },
+                { val: total - totalOwned, label: "FALTAN",    color: "#EF4444" },
+                { val: totalDupes, label: "REPETIDOS", color: "#F97316" },
+              ].map(({ val, label, color }) => (
+                <div key={label} className="flex flex-col items-center gap-0.5">
+                  <span style={{ fontFamily:"var(--font-display)", color }} className="text-[26px] font-extrabold">{val}</span>
+                  <span className="text-[10px] text-atlas-dimmed tracking-wide">{label}</span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-        <div className="h-2 rounded-full overflow-hidden mb-2" style={{ background: "var(--atlas-surface2)" }}>
-          <div
-            className="h-full rounded-full transition-all"
-            style={{ width: `${PCT}%`, background: "linear-gradient(90deg,#F97316,#FB923C)" }}
-          />
-        </div>
-        <p className="text-center text-[12px] text-atlas-muted">{PCT}% del álbum completado</p>
-      </div>
+            <div className="h-2 rounded-full overflow-hidden mb-1.5" style={{ background:"var(--atlas-surface2)" }}>
+              <div className="h-full rounded-full transition-all" style={{ width:`${pct}%`, background:"linear-gradient(90deg,#F97316,#FB923C)" }} />
+            </div>
+            <p className="text-center text-[11px] text-atlas-muted">{pct}% completado · {totalOwned}/{total} cromos</p>
+          </div>
 
-      {/* Filter */}
-      <div className="flex gap-1.5 px-4 py-3 flex-shrink-0 overflow-x-auto">
-        {FILTERS.map(({ key, label }) => (
-          <button
-            key={key}
-            onClick={() => setFilter(key)}
-            className="flex-shrink-0 px-3.5 py-1.5 rounded-full text-[12px] font-semibold transition-all"
-            style={{
-              background: filter === key ? "#F97316" : "var(--atlas-surface2)",
-              border: `1px solid ${filter === key ? "#F97316" : "var(--atlas-glass-md)"}`,
-              color: filter === key ? "#fff" : "#8892B0",
-            }}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+          {/* Filters + Repetidos link */}
+          <div className="flex items-center gap-1.5 px-4 py-2.5 flex-shrink-0 overflow-x-auto">
+            {(["all","owned","missing"] as const).map(f => (
+              <button key={f} onClick={() => setFilter(f)}
+                className="flex-shrink-0 px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all"
+                style={{
+                  background: filter===f ? "#F97316" : "var(--atlas-surface2)",
+                  color: filter===f ? "#fff" : "#8892B0",
+                  border:`1px solid ${filter===f?"#F97316":"var(--atlas-glass-md)"}`,
+                }}>
+                {f==="all"?"Todo":f==="owned"?"Completos":"Incompletos"}
+              </button>
+            ))}
+            <Link href="/mas/panini/repetidos"
+              className="flex-shrink-0 ml-auto px-3 py-1.5 rounded-full text-[12px] font-semibold"
+              style={{ background:"rgba(249,115,22,0.12)", color:"#F97316", border:"1px solid rgba(249,115,22,0.25)" }}>
+              Repetidos ({totalDupes})
+            </Link>
+          </div>
 
-      {/* Sticker Grid */}
-      <div className="flex-1 overflow-y-auto px-4 pb-4">
-        {SECTIONS.map((sec, si) => {
-          const visible = sec.stickers.filter((s) => filter === "all" || s === filter);
-          if (!visible.length) return null;
-          return (
-            <div key={si} className="mb-4">
-              <div style={{ fontFamily: "var(--font-display)" }} className="text-[16px] font-bold text-atlas-text mb-2">
-                {sec.label}
-              </div>
-              <div className="grid gap-1" style={{ gridTemplateColumns: "repeat(8, 1fr)" }}>
-                {visible.map((state, j) => (
-                  <div
-                    key={j}
-                    className="rounded-[6px] flex items-center justify-center"
-                    style={{
-                      aspectRatio: "0.75",
-                      background: state === "owned" ? "rgba(34,197,94,0.13)" : state === "dup" ? "rgba(249,115,22,0.13)" : "var(--atlas-surface2)",
-                      border: `1.5px solid ${state === "owned" ? "rgba(34,197,94,0.44)" : state === "dup" ? "rgba(249,115,22,0.44)" : "var(--atlas-border)"}`,
-                    }}
-                  >
-                    <span className="text-[8px] font-bold" style={{
-                      color: state === "owned" ? "#22C55E" : state === "dup" ? "#F97316" : "#4A5178",
-                    }}>
-                      {state === "owned" ? "✓" : state === "dup" ? "×2" : "?"}
-                    </span>
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto px-4 pb-6" style={{ minHeight:0 }}>
+
+            {/* FWC Section */}
+            <Link href="/mas/panini/FWC">
+              <div className="flex items-center gap-3 p-3 rounded-2xl mb-4"
+                style={{ background:"var(--atlas-surface)", border:"1px solid rgba(249,115,22,0.25)" }}>
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-[22px] flex-shrink-0"
+                  style={{ background:"linear-gradient(135deg,#F97316,#FBBF24)" }}>⭐</div>
+                <div className="flex-1">
+                  <div className="text-[14px] font-bold text-atlas-text">Introducción + Museo FIFA</div>
+                  <div className="text-[11px] text-atlas-muted mt-0.5">Cromos especiales dorados</div>
+                </div>
+                <div className="text-right flex-shrink-0">
+                  <div className="text-[16px] font-bold" style={{ color: fwcOwned === fwcStickers.length ? "#22C55E" : "#F97316" }}>
+                    {fwcOwned}/{fwcStickers.length}
                   </div>
-                ))}
+                  <div className="w-14 h-1.5 rounded-full mt-1" style={{ background:"var(--atlas-surface2)" }}>
+                    <div className="h-full rounded-full" style={{ width:`${fwcStickers.length>0?Math.round(fwcOwned/fwcStickers.length*100):0}%`, background:"#F97316" }} />
+                  </div>
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            </Link>
+
+            {/* Teams by group */}
+            {GROUPS.map(group => {
+              const groupTeams = filteredTeams.filter(t => t.section === group);
+              if (!groupTeams.length) return null;
+              return (
+                <div key={group} className="mb-4">
+                  <div className="text-[11px] font-bold text-atlas-muted tracking-widest mb-2 uppercase">{group}</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {groupTeams.map(t => (
+                      <Link key={t.team_code} href={`/mas/panini/${t.team_code}`}>
+                        <div className="flex items-center gap-2.5 p-3 rounded-xl"
+                          style={{ background:"var(--atlas-surface)", border:`1px solid ${t.owned===t.total?"rgba(34,197,94,0.3)":"var(--atlas-border)"}` }}>
+                          {t.flag ? (
+                            <Image src={`https://flagcdn.com/w40/${t.flag}.png`} alt={t.team_name} width={32} height={22}
+                              className="rounded-sm flex-shrink-0 object-cover" style={{ height:22 }} />
+                          ) : (
+                            <div className="w-8 h-5 rounded-sm flex-shrink-0" style={{ background:"var(--atlas-surface2)" }} />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="text-[12px] font-bold text-atlas-text truncate">{t.team_name}</div>
+                            <div className="flex items-center gap-1 mt-0.5">
+                              <div className="flex-1 h-1 rounded-full" style={{ background:"var(--atlas-surface2)" }}>
+                                <div className="h-full rounded-full transition-all"
+                                  style={{ width:`${Math.round(t.owned/t.total*100)}%`, background: t.owned===t.total?"#22C55E":"#F97316" }} />
+                              </div>
+                              <span className="text-[10px] font-semibold flex-shrink-0"
+                                style={{ color: t.owned===t.total?"#22C55E":"#8892B0" }}>{t.owned}/{t.total}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
     </div>
   );
 }
