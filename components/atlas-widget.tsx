@@ -1,5 +1,6 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
+import { motion, useMotionValue } from "framer-motion";
 import type { User } from "@/lib/types";
 import AgentAvatar from "@/components/AgentAvatar";
 
@@ -18,6 +19,22 @@ const SUGGESTIONS = [
 
 export function AtlasWidget({ user }: { user: User }) {
   const [open, setOpen] = useState(false);
+  const fabX = useMotionValue(0);
+  const fabY = useMotionValue(0);
+  const dragStartPos = useRef({ x: 0, y: 0 });
+
+  // Restaurar posición guardada (solo en cliente)
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("atlas-fab-pos");
+      if (saved) {
+        const { x, y } = JSON.parse(saved) as { x: number; y: number };
+        fabX.set(x);
+        fabY.set(y);
+      }
+    } catch { /* sin persistencia */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "atlas",
@@ -83,15 +100,44 @@ export function AtlasWidget({ user }: { user: User }) {
 
   return (
     <>
-      {/* FAB */}
+      {/* FAB — arrastrable */}
       {!open && (
-        <button
-          onClick={() => setOpen(true)}
-          className="fixed bottom-24 right-4 z-50"
-          style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }}
+        <motion.div
+          drag
+          dragMomentum={false}
+          dragElastic={0.08}
+          style={{
+            x: fabX,
+            y: fabY,
+            position: "fixed",
+            bottom: "6rem",
+            right: "1rem",
+            zIndex: 50,
+            touchAction: "none",
+            cursor: "grab",
+          }}
+          whileDrag={{ cursor: "grabbing", scale: 1.08 }}
+          onDragStart={() => {
+            dragStartPos.current = { x: fabX.get(), y: fabY.get() };
+          }}
+          onDragEnd={() => {
+            const moved =
+              Math.abs(fabX.get() - dragStartPos.current.x) +
+              Math.abs(fabY.get() - dragStartPos.current.y);
+            if (moved < 6) {
+              // Fue un tap, no un drag
+              setOpen(true);
+            }
+            try {
+              localStorage.setItem(
+                "atlas-fab-pos",
+                JSON.stringify({ x: fabX.get(), y: fabY.get() })
+              );
+            } catch { /* sin persistencia */ }
+          }}
         >
           <AgentAvatar size={60} status="idle" name="atlas-fab" />
-        </button>
+        </motion.div>
       )}
 
       {/* Chat Panel */}
