@@ -247,6 +247,46 @@ export async function getGroupMatchBets(
   }
 }
 
+export type PinnedMatch = {
+  match_id: number;
+  pinned_by: string;
+};
+
+export async function getGroupPinnedMatches(groupId: string): Promise<PinnedMatch[]> {
+  try {
+    const { data } = await supabase
+      .from("group_pinned_matches")
+      .select("match_id, pinned_by")
+      .eq("group_id", groupId);
+    return (data ?? []) as PinnedMatch[];
+  } catch {
+    return [];
+  }
+}
+
+export async function pinMatchToGroup(
+  userId: string,
+  groupId: string,
+  matchId: number
+): Promise<{ error: string | null }> {
+  const { error } = await supabase
+    .from("group_pinned_matches")
+    .insert({ group_id: groupId, match_id: matchId, pinned_by: userId });
+  return { error: error?.message ?? null };
+}
+
+export async function unpinMatchFromGroup(
+  groupId: string,
+  matchId: number
+): Promise<{ error: string | null }> {
+  const { error } = await supabase
+    .from("group_pinned_matches")
+    .delete()
+    .eq("group_id", groupId)
+    .eq("match_id", matchId);
+  return { error: error?.message ?? null };
+}
+
 export async function getUserGroups(userId: string): Promise<UserGroup[]> {
   try {
     const { data: members, error: me } = await supabase

@@ -15,6 +15,9 @@ import {
   getUserGroups,
   getGroupMatchBets,
   saveGroupBet,
+  getGroupPinnedMatches,
+  pinMatchToGroup,
+  unpinMatchFromGroup,
   getMatchLiveScore,
   calculatePoints,
   isMatchLocked,
@@ -25,20 +28,10 @@ import {
   type GroupMatchBetEntry,
   type GroupBet,
   type LiveScore,
+  type PinnedMatch,
 } from "@/lib/predictions";
 
 const LOCALE_MAP: Record<string, string> = { es: "es-AR", en: "en-US", pt: "pt-BR" };
-const PINNED_KEY = "atlas_pinned_matches";
-
-function loadPinned(): Record<string, number[]> {
-  if (typeof window === "undefined") return {};
-  try { return JSON.parse(localStorage.getItem(PINNED_KEY) ?? "{}"); }
-  catch { return {}; }
-}
-
-function savePinned(data: Record<string, number[]>) {
-  localStorage.setItem(PINNED_KEY, JSON.stringify(data));
-}
 
 function formatMatchDay(date: string, locale: string): string {
   const d = new Date(date + "T12:00:00");
@@ -120,11 +113,9 @@ export default function PredictorPage() {
   const [betDraft, setBetDraft] = useState<Draft>({ home: "", away: "", winner: null });
   const [savingBet, setSavingBet] = useState(false);
 
-  // ── Pin (localStorage) ────────────────────────────────
-  const [pinnedMatches, setPinnedMatches] = useState<Record<string, number[]>>({});
+  // ── Pin (DB) ──────────────────────────────────────────
+  const [pinnedMatches, setPinnedMatches] = useState<PinnedMatch[]>([]);
   const [groupPickerMatchId, setGroupPickerMatchId] = useState<number | null>(null);
-
-  useEffect(() => { setPinnedMatches(loadPinned()); }, []);
 
   const load = useCallback(async () => {
     if (!user?.id) return;
@@ -141,6 +132,12 @@ export default function PredictorPage() {
       setPpGroupId((prev) => prev || grps[0]?.id || "");
     });
   }, [user?.id]);
+
+  // Load pinned matches from DB when group changes
+  useEffect(() => {
+    if (!ppGroupId) return;
+    getGroupPinnedMatches(ppGroupId).then(setPinnedMatches);
+  }, [ppGroupId]);
 
   useEffect(() => {
     if (tab !== "ranking") return;
@@ -177,16 +174,18 @@ export default function PredictorPage() {
     getMatchLiveScore(m.home.code, m.away.code).then(setLiveScore);
   }, [selectedMatchId]);
 
-  const togglePin = (matchId: number, groupId: string) => {
-    setPinnedMatches((prev) => {
-      const current = prev[groupId] ?? [];
-      const next = current.includes(matchId)
-        ? current.filter((id) => id !== matchId)
-        : [...current, matchId];
-      const updated = { ...prev, [groupId]: next };
-      savePinned(updated);
-      return updated;
-    });
+  const handlePin = async (matchId: number, groupId: string) => {
+    if (!user?.id) return;
+    const alreadyPinned = pinnedMatches.some((p) => p.match_id === matchId);
+    if (alreadyPinned) return; // unpin only via × by the owner
+    await pinMatchToGroup(user.id, groupId, matchId);
+    getGroupPinnedMatches(groupId).then(setPinnedMatches);
+  };
+
+  const handleUnpin = async (matchId: number, groupId: string) => {
+    await unpinMatchFromGroup(groupId, matchId);
+    setSelectedMatchId(null);
+    getGroupPinnedMatches(groupId).then(setPinnedMatches);
   };
 
   // Torneo helpers
@@ -255,11 +254,10 @@ export default function PredictorPage() {
 
   // Pinned matches for Por partido
   const pinnedMatchList = useMemo(() => {
-    if (!ppGroupId) return [];
-    const ids = new Set(pinnedMatches[ppGroupId] ?? []);
+    const ids = new Set(pinnedMatches.map((p) => p.match_id));
     return MATCHES.filter((m) => ids.has(m.id))
       .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
-  }, [pinnedMatches, ppGroupId]);
+  }, [pinnedMatches]);
 
   const pinnedByDate = useMemo(() => {
     const map = new Map<string, (typeof MATCHES)[number][]>();
@@ -341,7 +339,7 @@ export default function PredictorPage() {
             {pendingMatches.map((m) => {
               const d = drafts[m.id] ?? { home: "", away: "", winner: null };
               const canSave = !!d.winner && saving !== m.id;
-              const isPinnedAny = groups.some((g) => (pinnedMatches[g.id] ?? []).includes(m.id));
+              const isPinnedAny = pinnedMatches.some((p) => p.match_id === m.id);
               const isPickerOpen = groupPickerMatchId === m.id;
 
               return (
@@ -378,16 +376,17 @@ export default function PredictorPage() {
                   {isPickerOpen && (
                     <div className="flex flex-wrap gap-1.5 mb-3">
                       {groups.map((g) => {
-                        const isPinned = (pinnedMatches[g.id] ?? []).includes(m.id);
+                        const isPinned = pinnedMatches.some((p) => p.match_id === m.id);
                         return (
                           <button
                             key={g.id}
-                            onClick={() => togglePin(m.id, g.id)}
+                            onClick={() => !isPinned && handlePin(m.id, g.id)}
                             className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all"
                             style={{
                               background: isPinned ? "rgba(249,115,22,0.15)" : "var(--atlas-glass-sm)",
                               border: `1px solid ${isPinned ? "#F97316" : "var(--atlas-glass-md)"}`,
                               color: isPinned ? "#F97316" : "#8892B0",
+                              opacity: isPinned ? 1 : 1,
                             }}
                           >
                             {isPinned ? "✓" : "+"} {g.name}
@@ -484,7 +483,7 @@ export default function PredictorPage() {
                   {groups.map((g) => (
                     <button
                       key={g.id}
-                      onClick={() => { setPpGroupId(g.id); setSelectedMatchId(null); }}
+                      onClick={() => { setPpGroupId(g.id); setSelectedMatchId(null); setPinnedMatches([]); }}
                       className="flex-shrink-0 px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all"
                       style={{
                         background: ppGroupId === g.id ? "#F97316" : "var(--atlas-surface2)",
@@ -566,14 +565,16 @@ export default function PredictorPage() {
                                   />
                                 </button>
 
-                                {/* Unpin */}
-                                <button
-                                  onClick={() => { togglePin(m.id, ppGroupId); if (isSelected) setSelectedMatchId(null); }}
-                                  className="w-8 h-8 flex items-center justify-center rounded-xl text-[18px] flex-shrink-0"
-                                  style={{ background: "var(--atlas-glass-sm)", border: "1px solid var(--atlas-glass-md)", color: "#4A5178" }}
-                                >
-                                  ×
-                                </button>
+                                {/* Unpin — only visible to the pinner */}
+                                {pinnedMatches.find((p) => p.match_id === m.id)?.pinned_by === user?.id && (
+                                  <button
+                                    onClick={() => handleUnpin(m.id, ppGroupId)}
+                                    className="w-8 h-8 flex items-center justify-center rounded-xl text-[18px] flex-shrink-0"
+                                    style={{ background: "var(--atlas-glass-sm)", border: "1px solid var(--atlas-glass-md)", color: "#4A5178" }}
+                                  >
+                                    ×
+                                  </button>
+                                )}
                               </div>
 
                               {/* Expanded panel */}
