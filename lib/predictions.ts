@@ -84,7 +84,7 @@ export function calculateGroupPoints(
   const actualWinner: PredWinner =
     actualHome > actualAway ? "home" : actualAway > actualHome ? "away" : "draw";
   if (predicted !== actualWinner) return 0;
-  return actualWinner === "draw" ? 1 : 2;
+  return 2;
 }
 
 export async function savePrediction(
