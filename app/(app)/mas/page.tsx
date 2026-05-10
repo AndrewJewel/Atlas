@@ -146,7 +146,7 @@ export default function MasPage() {
 
         {/* ── Menu Items ───────────────────────────────────── */}
         {[
-          { icon: <TrophyIcon size={22} color="#F97316" />, label: t("champions_label"), sub: t("champions_sub"), href: "/mas/campeones" },
+          { icon: "🏆", label: t("champions_label"), sub: t("champions_sub"), href: "/mas/campeones" },
           { icon: "📒", label: t("panini_label"),    sub: t("panini_sub"),    href: "/mas/panini"    },
         ].map((item, i) => (
           <Link key={i} href={item.href}>
