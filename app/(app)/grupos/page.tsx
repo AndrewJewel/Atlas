@@ -149,7 +149,7 @@ export default function GruposPage() {
 
           {/* Active group hero — fills remaining space */}
           {current && (
-            <div className="flex-1 overflow-y-auto px-5 pt-4 pb-6 flex flex-col" style={{ minHeight: 0 }}>
+            <div className="flex-1 overflow-y-auto px-5 pt-4 pb-28 flex flex-col" style={{ minHeight: 0 }}>
               {/* Group name + delete (if creator) */}
               <div className="flex items-start justify-between gap-3 mb-5">
                 <div className="flex-1 min-w-0">
