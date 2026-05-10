@@ -14,15 +14,29 @@ import {
   getGroupRanking,
   getUserGroups,
   getMatchGroupPredictions,
+  getMatchLiveScore,
+  calculatePoints,
   isMatchLocked,
   type SavedPrediction,
   type RankingEntry,
   type UserGroup,
   type PredWinner,
   type MatchMemberPred,
+  type LiveScore,
 } from "@/lib/predictions";
 
 const LOCALE_MAP: Record<string, string> = { es: "es-AR", en: "en-US", pt: "pt-BR" };
+const PINNED_KEY = "atlas_pinned_matches";
+
+function loadPinned(): Record<string, number[]> {
+  if (typeof window === "undefined") return {};
+  try { return JSON.parse(localStorage.getItem(PINNED_KEY) ?? "{}"); }
+  catch { return {}; }
+}
+
+function savePinned(data: Record<string, number[]>) {
+  localStorage.setItem(PINNED_KEY, JSON.stringify(data));
+}
 
 function formatMatchDay(date: string, locale: string): string {
   const d = new Date(date + "T12:00:00");
@@ -40,6 +54,33 @@ function deriveWinner(h: string, a: string): PredWinner | null {
   if (hv > av) return "home";
   if (av > hv) return "away";
   return "draw";
+}
+
+function effectivePoints(member: MatchMemberPred, live: LiveScore | null): number {
+  if (!member.pred) return -1;
+  if (member.pred.points_earned !== null) return member.pred.points_earned;
+  if (live?.status === "finished") {
+    return calculatePoints(
+      member.pred.predicted_winner,
+      member.pred.home_score,
+      member.pred.away_score,
+      live.home_score,
+      live.away_score
+    );
+  }
+  return 0;
+}
+
+function statusBadge(live: LiveScore | null, locked: boolean) {
+  if (!live || live.status === "scheduled") {
+    return locked
+      ? { label: "Cerrado", color: "#4A5178", bg: "rgba(74,81,120,0.15)" }
+      : { label: "Abierto", color: "#22C55E", bg: "rgba(34,197,94,0.12)" };
+  }
+  if (live.status === "live") {
+    return { label: `EN VIVO ${live.minute}`, color: "#EF4444", bg: "rgba(239,68,68,0.12)" };
+  }
+  return { label: "Terminado", color: "#F97316", bg: "rgba(249,115,22,0.12)" };
 }
 
 export default function PredictorPage() {
@@ -73,6 +114,13 @@ export default function PredictorPage() {
   const [selectedMatchId, setSelectedMatchId] = useState<number | null>(null);
   const [matchMembers, setMatchMembers] = useState<MatchMemberPred[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
+  const [liveScore, setLiveScore] = useState<LiveScore | null>(null);
+
+  // ── Pin state (localStorage) ──────────────────────────
+  const [pinnedMatches, setPinnedMatches] = useState<Record<string, number[]>>({});
+  const [groupPickerMatchId, setGroupPickerMatchId] = useState<number | null>(null);
+
+  useEffect(() => { setPinnedMatches(loadPinned()); }, []);
 
   const load = useCallback(async () => {
     if (!user?.id) return;
@@ -82,7 +130,6 @@ export default function PredictorPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  // Load groups eagerly — shared by Ranking and Por partido
   useEffect(() => {
     if (!user?.id) return;
     getUserGroups(user.id).then((grps) => {
@@ -91,7 +138,6 @@ export default function PredictorPage() {
     });
   }, [user?.id]);
 
-  // Ranking data
   useEffect(() => {
     if (tab !== "ranking") return;
     setLoadingRank(true);
@@ -101,7 +147,6 @@ export default function PredictorPage() {
       .finally(() => setLoadingRank(false));
   }, [tab, activeGroup]);
 
-  // Por partido: load group predictions when match or group changes
   useEffect(() => {
     if (!selectedMatchId || !ppGroupId) { setMatchMembers([]); return; }
     setLoadingMembers(true);
@@ -109,6 +154,25 @@ export default function PredictorPage() {
       .then(setMatchMembers)
       .finally(() => setLoadingMembers(false));
   }, [selectedMatchId, ppGroupId]);
+
+  useEffect(() => {
+    if (!selectedMatchId) { setLiveScore(null); return; }
+    const m = MATCHES.find((x) => x.id === selectedMatchId);
+    if (!m) { setLiveScore(null); return; }
+    getMatchLiveScore(m.home.code, m.away.code).then(setLiveScore);
+  }, [selectedMatchId]);
+
+  const togglePin = (matchId: number, groupId: string) => {
+    setPinnedMatches((prev) => {
+      const current = prev[groupId] ?? [];
+      const next = current.includes(matchId)
+        ? current.filter((id) => id !== matchId)
+        : [...current, matchId];
+      const updated = { ...prev, [groupId]: next };
+      savePinned(updated);
+      return updated;
+    });
+  };
 
   const predMap = new Map(preds.map((p) => [p.match_id, p]));
   const totalPoints = preds.reduce((s, p) => s + (p.points_earned ?? 0), 0);
@@ -149,15 +213,22 @@ export default function PredictorPage() {
     setSaving(null);
   };
 
-  // All matches grouped by date for "Por partido"
-  const matchesByDate = useMemo(() => {
+  // Pinned matches sorted by date for Por partido tab
+  const pinnedMatchList = useMemo(() => {
+    if (!ppGroupId) return [];
+    const ids = new Set(pinnedMatches[ppGroupId] ?? []);
+    return MATCHES.filter((m) => ids.has(m.id))
+      .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
+  }, [pinnedMatches, ppGroupId]);
+
+  const pinnedByDate = useMemo(() => {
     const map = new Map<string, (typeof MATCHES)[number][]>();
-    for (const m of MATCHES) {
+    for (const m of pinnedMatchList) {
       if (!map.has(m.date)) map.set(m.date, []);
       map.get(m.date)!.push(m);
     }
     return [...map.entries()].sort(([a], [b]) => a.localeCompare(b));
-  }, []);
+  }, [pinnedMatchList]);
 
   const TAB_LABELS: Record<Tab, string> = {
     torneo: t("tab_torneo"),
@@ -231,19 +302,64 @@ export default function PredictorPage() {
             {pendingMatches.map((m) => {
               const d = drafts[m.id] ?? { home: "", away: "", winner: null };
               const canSave = !!d.winner && saving !== m.id;
+              const isPinnedAny = groups.some((g) => (pinnedMatches[g.id] ?? []).includes(m.id));
+              const isPickerOpen = groupPickerMatchId === m.id;
+
               return (
                 <div
                   key={m.id}
                   className="rounded-[18px] p-4"
                   style={{ background: "var(--atlas-surface)", border: "1px solid var(--atlas-border-card)" }}
                 >
-                  <div
-                    className="text-[10px] font-bold tracking-widest text-atlas-primary mb-3"
-                    style={{ fontFamily: "var(--font-display)" }}
-                  >
-                    {formatMatchDay(m.date, locale)}
+                  {/* Card header: date + pin button */}
+                  <div className="flex items-center justify-between mb-3">
+                    <div
+                      className="text-[10px] font-bold tracking-widest text-atlas-primary"
+                      style={{ fontFamily: "var(--font-display)" }}
+                    >
+                      {formatMatchDay(m.date, locale)}
+                    </div>
+
+                    {groups.length > 0 && (
+                      <button
+                        onClick={() => setGroupPickerMatchId(isPickerOpen ? null : m.id)}
+                        className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold transition-all"
+                        style={{
+                          background: isPinnedAny || isPickerOpen ? "rgba(249,115,22,0.12)" : "transparent",
+                          border: `1px solid ${isPinnedAny || isPickerOpen ? "rgba(249,115,22,0.4)" : "var(--atlas-glass-md)"}`,
+                          color: isPinnedAny || isPickerOpen ? "#F97316" : "#4A5178",
+                        }}
+                      >
+                        <span style={{ fontSize: "13px", lineHeight: 1 }}>📌</span>
+                        <span>{t("nav_grupos")}</span>
+                      </button>
+                    )}
                   </div>
 
+                  {/* Group picker */}
+                  {isPickerOpen && (
+                    <div className="flex flex-wrap gap-1.5 mb-3">
+                      {groups.map((g) => {
+                        const isPinned = (pinnedMatches[g.id] ?? []).includes(m.id);
+                        return (
+                          <button
+                            key={g.id}
+                            onClick={() => togglePin(m.id, g.id)}
+                            className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all"
+                            style={{
+                              background: isPinned ? "rgba(249,115,22,0.15)" : "var(--atlas-glass-sm)",
+                              border: `1px solid ${isPinned ? "#F97316" : "var(--atlas-glass-md)"}`,
+                              color: isPinned ? "#F97316" : "#8892B0",
+                            }}
+                          >
+                            {isPinned ? "✓" : "+"} {g.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Teams */}
                   <div className="flex items-center justify-between gap-2 mb-3">
                     <button
                       onClick={() => toggleWinner(m.id, "home")}
@@ -332,7 +448,7 @@ export default function PredictorPage() {
                   {groups.map((g) => (
                     <button
                       key={g.id}
-                      onClick={() => setPpGroupId(g.id)}
+                      onClick={() => { setPpGroupId(g.id); setSelectedMatchId(null); }}
                       className="flex-shrink-0 px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all"
                       style={{
                         background: ppGroupId === g.id ? "#F97316" : "var(--atlas-surface2)",
@@ -345,193 +461,268 @@ export default function PredictorPage() {
                   ))}
                 </div>
 
-                {/* Match list */}
-                <div className="px-4 pb-28">
-                  {matchesByDate.map(([date, dayMatches]) => (
-                    <div key={date}>
-                      {/* Date header */}
-                      <div
-                        className="text-[10px] font-bold tracking-[0.15em] uppercase text-atlas-dimmed py-2.5 sticky top-0 z-10"
-                        style={{ background: "var(--atlas-bg)" }}
-                      >
-                        {formatMatchDay(date, locale)}
-                      </div>
+                {/* Pinned matches list or empty state */}
+                {pinnedByDate.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center gap-4 p-8 min-h-[260px]">
+                    <span className="text-[40px]">📌</span>
+                    <span className="text-[14px] text-atlas-muted text-center">{t("pp_add_hint")}</span>
+                  </div>
+                ) : (
+                  <div className="px-4 pb-28">
+                    {pinnedByDate.map(([date, dayMatches]) => (
+                      <div key={date}>
+                        <div
+                          className="text-[10px] font-bold tracking-[0.15em] uppercase text-atlas-dimmed py-2.5 sticky top-0 z-10"
+                          style={{ background: "var(--atlas-bg)" }}
+                        >
+                          {formatMatchDay(date, locale)}
+                        </div>
 
-                      {dayMatches.map((m) => {
-                        const isSelected = selectedMatchId === m.id;
-                        const hasPred = predMap.has(m.id);
-                        const locked = isMatchLocked(m);
+                        {dayMatches.map((m) => {
+                          const isSelected = selectedMatchId === m.id;
+                          const hasPred = predMap.has(m.id);
+                          const locked = isMatchLocked(m);
+                          const badge = isSelected ? statusBadge(liveScore, locked) : null;
 
-                        return (
-                          <div key={m.id} className="mb-1.5">
-                            {/* Match row */}
-                            <button
-                              onClick={() => setSelectedMatchId(isSelected ? null : m.id)}
-                              className="w-full flex items-center gap-2 px-3 py-2.5 rounded-2xl transition-all"
-                              style={{
-                                background: isSelected ? "rgba(249,115,22,0.1)" : "var(--atlas-surface)",
-                                border: `1px solid ${isSelected ? "rgba(249,115,22,0.35)" : "var(--atlas-border-card)"}`,
-                              }}
-                            >
-                              {/* Home */}
-                              <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                                <TeamFlag code={m.home.code} size="sm" />
-                                <span className="text-[12px] font-semibold text-atlas-text truncate">
-                                  {m.home.name}
-                                </span>
-                              </div>
+                          const sortedMembers = isSelected
+                            ? [...matchMembers].sort(
+                                (a, b) => effectivePoints(b, liveScore) - effectivePoints(a, liveScore)
+                              )
+                            : [];
 
-                              <span className="text-[10px] font-bold text-atlas-dimmed flex-shrink-0">vs</span>
+                          let medalPos = 0;
+                          let prevPts = -999;
+                          const medals = ["🥇", "🥈", "🥉"];
 
-                              {/* Away */}
-                              <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
-                                <span className="text-[12px] font-semibold text-atlas-text truncate text-right">
-                                  {m.away.name}
-                                </span>
-                                <TeamFlag code={m.away.code} size="sm" />
-                              </div>
-
-                              {/* Prediction dot */}
-                              <div
-                                className="w-2 h-2 rounded-full flex-shrink-0 ml-1"
-                                style={{
-                                  background: hasPred
-                                    ? "#22C55E"
-                                    : locked
-                                    ? "var(--atlas-glass-md)"
-                                    : "rgba(249,115,22,0.4)",
-                                }}
-                              />
-                            </button>
-
-                            {/* Expanded predictions panel */}
-                            {isSelected && (
-                              <div
-                                className="rounded-2xl mt-1 overflow-hidden"
-                                style={{
-                                  background: "var(--atlas-surface)",
-                                  border: "1px solid var(--atlas-border-card)",
-                                }}
-                              >
-                                {/* Panel header */}
-                                <div
-                                  className="flex items-center justify-between px-4 py-3"
-                                  style={{ borderBottom: "1px solid var(--atlas-glass)" }}
+                          return (
+                            <div key={m.id} className="mb-1.5">
+                              {/* Match row + unpin button */}
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  onClick={() => setSelectedMatchId(isSelected ? null : m.id)}
+                                  className="flex-1 flex items-center gap-2 px-3 py-2.5 rounded-2xl transition-all"
+                                  style={{
+                                    background: isSelected ? "rgba(249,115,22,0.1)" : "var(--atlas-surface)",
+                                    border: `1px solid ${isSelected ? "rgba(249,115,22,0.35)" : "var(--atlas-border-card)"}`,
+                                  }}
                                 >
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-1.5 flex-1 min-w-0">
                                     <TeamFlag code={m.home.code} size="sm" />
-                                    <span className="text-[13px] font-bold text-atlas-text">{m.home.name}</span>
+                                    <span className="text-[12px] font-semibold text-atlas-text truncate">
+                                      {m.home.name}
+                                    </span>
                                   </div>
-                                  <span className="text-[14px]">{locked ? "🔒" : "⏳"}</span>
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-[13px] font-bold text-atlas-text">{m.away.name}</span>
+                                  <span className="text-[10px] font-bold text-atlas-dimmed flex-shrink-0">vs</span>
+                                  <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
+                                    <span className="text-[12px] font-semibold text-atlas-text truncate text-right">
+                                      {m.away.name}
+                                    </span>
                                     <TeamFlag code={m.away.code} size="sm" />
                                   </div>
-                                </div>
+                                  <div
+                                    className="w-2 h-2 rounded-full flex-shrink-0 ml-1"
+                                    style={{
+                                      background: hasPred
+                                        ? "#22C55E"
+                                        : locked
+                                        ? "var(--atlas-glass-md)"
+                                        : "rgba(249,115,22,0.4)",
+                                    }}
+                                  />
+                                </button>
 
-                                {/* Members predictions */}
-                                {loadingMembers ? (
-                                  <div className="flex justify-center py-6">
-                                    <div className="w-6 h-6 rounded-full border-2 border-atlas-primary border-t-transparent animate-spin" />
-                                  </div>
-                                ) : matchMembers.length === 0 ? (
-                                  <div className="px-4 py-4 text-[13px] text-atlas-dimmed text-center">
-                                    Sin miembros en este grupo
-                                  </div>
-                                ) : (
-                                  matchMembers.map((member, idx) => {
-                                    const isMe = member.user_id === user?.id;
-                                    const winnerName = !member.pred ? null
-                                      : member.pred.predicted_winner === "home" ? m.home.name
-                                      : member.pred.predicted_winner === "away" ? m.away.name
-                                      : "Empate";
-                                    return (
-                                      <div
-                                        key={member.user_id}
-                                        className="flex items-center gap-3 px-4 py-3"
-                                        style={{
-                                          borderBottom: idx < matchMembers.length - 1
-                                            ? "1px solid var(--atlas-glass)"
-                                            : "none",
-                                          background: isMe ? "rgba(249,115,22,0.05)" : "transparent",
-                                        }}
-                                      >
-                                        {/* Avatar */}
-                                        <div
-                                          className="w-9 h-9 rounded-xl flex items-center justify-center text-[20px] flex-shrink-0"
-                                          style={{ background: member.avatar?.bg ?? "#F97316" }}
-                                        >
-                                          {member.avatar?.emoji ?? "⭐"}
-                                        </div>
+                                {/* Unpin */}
+                                <button
+                                  onClick={() => {
+                                    togglePin(m.id, ppGroupId);
+                                    if (isSelected) setSelectedMatchId(null);
+                                  }}
+                                  className="w-8 h-8 flex items-center justify-center rounded-xl text-[18px] flex-shrink-0 transition-all"
+                                  style={{
+                                    background: "var(--atlas-glass-sm)",
+                                    border: "1px solid var(--atlas-glass-md)",
+                                    color: "#4A5178",
+                                  }}
+                                >
+                                  ×
+                                </button>
+                              </div>
 
-                                        {/* Name */}
-                                        <div className="flex-1 min-w-0">
-                                          <span className="text-[13px] font-semibold text-atlas-text">
-                                            {member.username}
+                              {/* Expanded predictions panel */}
+                              {isSelected && (
+                                <div
+                                  className="rounded-2xl mt-1 overflow-hidden"
+                                  style={{
+                                    background: "var(--atlas-surface)",
+                                    border: "1px solid var(--atlas-border-card)",
+                                  }}
+                                >
+                                  {/* Panel header */}
+                                  <div
+                                    className="px-4 py-3"
+                                    style={{ borderBottom: "1px solid var(--atlas-glass)" }}
+                                  >
+                                    <div className="flex items-center justify-between mb-2">
+                                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                                        <TeamFlag code={m.home.code} size="sm" />
+                                        <span className="text-[13px] font-bold text-atlas-text truncate">
+                                          {m.home.name}
+                                        </span>
+                                      </div>
+                                      <div className="flex flex-col items-center flex-shrink-0 px-3">
+                                        {liveScore && liveScore.status !== "scheduled" ? (
+                                          <span
+                                            className="text-[22px] font-black leading-none"
+                                            style={{ fontFamily: "var(--font-display)", color: "#F97316" }}
+                                          >
+                                            {liveScore.home_score}–{liveScore.away_score}
                                           </span>
-                                          {isMe && (
-                                            <span className="text-[11px] text-atlas-primary ml-1">
-                                              {t("you_suffix")}
-                                            </span>
-                                          )}
-                                        </div>
+                                        ) : (
+                                          <span className="text-[13px] font-bold text-atlas-dimmed">vs</span>
+                                        )}
+                                      </div>
+                                      <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
+                                        <span className="text-[13px] font-bold text-atlas-text truncate text-right">
+                                          {m.away.name}
+                                        </span>
+                                        <TeamFlag code={m.away.code} size="sm" />
+                                      </div>
+                                    </div>
+                                    {badge && (
+                                      <div className="flex justify-center">
+                                        <span
+                                          className="text-[10px] font-bold px-2.5 py-0.5 rounded-full tracking-wide"
+                                          style={{ background: badge.bg, color: badge.color }}
+                                        >
+                                          {badge.label}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
 
-                                        {/* Prediction */}
-                                        {member.pred ? (
-                                          <div className="flex flex-col items-end flex-shrink-0">
-                                            {member.pred.home_score !== null && member.pred.away_score !== null && (
-                                              <span
-                                                className="text-[18px] font-bold leading-none"
-                                                style={{ fontFamily: "var(--font-display)", color: "#F97316" }}
-                                              >
-                                                {member.pred.home_score}–{member.pred.away_score}
+                                  {/* Members ranking */}
+                                  {loadingMembers ? (
+                                    <div className="flex justify-center py-6">
+                                      <div className="w-6 h-6 rounded-full border-2 border-atlas-primary border-t-transparent animate-spin" />
+                                    </div>
+                                  ) : sortedMembers.length === 0 ? (
+                                    <div className="px-4 py-4 text-[13px] text-atlas-dimmed text-center">
+                                      Sin miembros en este grupo
+                                    </div>
+                                  ) : (
+                                    sortedMembers.map((member, idx) => {
+                                      const isMe = member.user_id === user?.id;
+                                      const pts = effectivePoints(member, liveScore);
+                                      const hasResult =
+                                        liveScore?.status === "finished" ||
+                                        member.pred?.points_earned !== null;
+
+                                      if (pts !== prevPts) { medalPos = idx + 1; prevPts = pts; }
+                                      const medal =
+                                        hasResult && member.pred && pts >= 0
+                                          ? medals[medalPos - 1] ?? null
+                                          : null;
+
+                                      const winnerName = !member.pred
+                                        ? null
+                                        : member.pred.predicted_winner === "home"
+                                        ? m.home.name
+                                        : member.pred.predicted_winner === "away"
+                                        ? m.away.name
+                                        : "Empate";
+
+                                      return (
+                                        <div
+                                          key={member.user_id}
+                                          className="flex items-center gap-3 px-4 py-3"
+                                          style={{
+                                            borderBottom:
+                                              idx < sortedMembers.length - 1
+                                                ? "1px solid var(--atlas-glass)"
+                                                : "none",
+                                            background: isMe
+                                              ? "rgba(249,115,22,0.05)"
+                                              : "transparent",
+                                          }}
+                                        >
+                                          <span className="text-[18px] w-7 text-center flex-shrink-0">
+                                            {medal ?? (hasResult && member.pred ? `${medalPos}` : "·")}
+                                          </span>
+                                          <div
+                                            className="w-9 h-9 rounded-xl flex items-center justify-center text-[20px] flex-shrink-0"
+                                            style={{ background: member.avatar?.bg ?? "#F97316" }}
+                                          >
+                                            {member.avatar?.emoji ?? "⭐"}
+                                          </div>
+                                          <div className="flex-1 min-w-0">
+                                            <span className="text-[13px] font-semibold text-atlas-text">
+                                              {member.username}
+                                            </span>
+                                            {isMe && (
+                                              <span className="text-[11px] text-atlas-primary ml-1">
+                                                {t("you_suffix")}
                                               </span>
                                             )}
-                                            <span className="text-[10px] text-atlas-muted">{winnerName}</span>
-                                            {member.pred.points_earned !== null && (
-                                              <span
-                                                className="text-[11px] font-bold"
-                                                style={{
-                                                  color: member.pred.points_earned > 0 ? "#22C55E" : "#4A5178",
-                                                }}
-                                              >
-                                                {member.pred.points_earned > 0
-                                                  ? `+${member.pred.points_earned}`
-                                                  : "0"}pts
+                                            {member.pred && winnerName && (
+                                              <div className="text-[10px] text-atlas-muted">{winnerName}</div>
+                                            )}
+                                          </div>
+                                          <div className="flex flex-col items-end flex-shrink-0">
+                                            {member.pred ? (
+                                              <>
+                                                {member.pred.home_score !== null &&
+                                                  member.pred.away_score !== null && (
+                                                    <span
+                                                      className="text-[16px] font-bold leading-none"
+                                                      style={{
+                                                        fontFamily: "var(--font-display)",
+                                                        color: "#F97316",
+                                                      }}
+                                                    >
+                                                      {member.pred.home_score}–{member.pred.away_score}
+                                                    </span>
+                                                  )}
+                                                {hasResult && (
+                                                  <span
+                                                    className="text-[13px] font-bold"
+                                                    style={{ color: pts > 0 ? "#22C55E" : "#4A5178" }}
+                                                  >
+                                                    {pts > 0 ? `+${pts}` : "0"} pts
+                                                  </span>
+                                                )}
+                                              </>
+                                            ) : (
+                                              <span className="text-[11px] text-atlas-dimmed italic">
+                                                {t("pp_no_pred")}
                                               </span>
                                             )}
                                           </div>
-                                        ) : (
-                                          <span className="text-[11px] text-atlas-dimmed italic flex-shrink-0">
-                                            {t("pp_no_pred")}
-                                          </span>
-                                        )}
-                                      </div>
-                                    );
-                                  })
-                                )}
+                                        </div>
+                                      );
+                                    })
+                                  )}
 
-                                {/* CTA to predict if match not locked and user hasn't predicted */}
-                                {!locked && !hasPred && (
-                                  <button
-                                    onClick={() => setTab("torneo")}
-                                    className="w-full py-3 text-[12px] font-semibold"
-                                    style={{
-                                      borderTop: "1px solid var(--atlas-glass)",
-                                      color: "#F97316",
-                                    }}
-                                  >
-                                    {t("pp_predict_cta")}
-                                  </button>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ))}
-                </div>
+                                  {!locked && !hasPred && (
+                                    <button
+                                      onClick={() => setTab("torneo")}
+                                      className="w-full py-3 text-[12px] font-semibold"
+                                      style={{
+                                        borderTop: "1px solid var(--atlas-glass)",
+                                        color: "#F97316",
+                                      }}
+                                    >
+                                      {t("pp_predict_cta")}
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </>
             )}
           </>
