@@ -73,6 +73,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json({ updated: rows.length });
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    console.error("Cron live error:", err);
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }

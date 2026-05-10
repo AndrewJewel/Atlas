@@ -46,11 +46,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Faltan datos" }, { status: 400 });
   }
 
+  const sb = adminClient();
+
+  // Verify sender is a member of this group
+  const { data: membership } = await sb
+    .from("group_members")
+    .select("id")
+    .eq("group_id", groupId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (!membership) {
+    return NextResponse.json({ error: "No eres miembro de este grupo" }, { status: 403 });
+  }
+
   try { ensureVapid(); } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }
-
-  const sb = adminClient();
 
   // Recipients = group members other than the sender
   const { data: members } = await sb
@@ -70,8 +82,10 @@ export async function POST(req: NextRequest) {
   if (!subs?.length) return NextResponse.json({ ok: true, sent: 0 });
 
   const truncated = content.length > 120 ? content.slice(0, 117) + "..." : content;
+  const titleRaw = groupName ? `${senderName ?? "Alguien"} · ${groupName}` : (senderName ?? "Nuevo mensaje");
+  const title = titleRaw.length > 80 ? titleRaw.slice(0, 77) + "..." : titleRaw;
   const payload = JSON.stringify({
-    title: groupName ? `${senderName ?? "Alguien"} · ${groupName}` : (senderName ?? "Nuevo mensaje"),
+    title,
     body: truncated,
     icon: "/icon-192.png",
     badge: "/badge.png",
