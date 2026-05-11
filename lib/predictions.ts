@@ -54,7 +54,7 @@ function kickoffUTC(date: string, time: string, city: string): Date {
 }
 
 export function isMatchLocked(match: Pick<Match, "date" | "time" | "city">): boolean {
-  return Date.now() >= kickoffUTC(match.date, match.time, match.city).getTime();
+  return Date.now() >= kickoffUTC(match.date, match.time, match.city).getTime() - 15 * 60 * 1000;
 }
 
 export function calculatePoints(

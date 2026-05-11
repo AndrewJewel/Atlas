@@ -214,7 +214,9 @@ export default function PredictorPage() {
   const totalPoints = preds.reduce((s, p) => s + (p.points_earned ?? 0), 0);
   const predicted = preds.length;
   const level = levelFromPoints(totalPoints);
-  const pendingMatches = MATCHES.filter((m) => !isMatchLocked(m) && !predMap.has(m.id));
+  // Unlocked matches + locked matches that already have a prediction
+  const torneoMatches = MATCHES.filter((m) => !isMatchLocked(m) || predMap.has(m.id));
+  const openUnpredicted = torneoMatches.filter((m) => !isMatchLocked(m) && !predMap.has(m.id));
 
   const updateScore = (matchId: number, side: "home" | "away", raw: string) => {
     const val = raw.replace(/\D/g, "").slice(0, 2);
@@ -227,9 +229,14 @@ export default function PredictorPage() {
   };
 
   const toggleWinner = (matchId: number, w: PredWinner) => {
-    if (predMap.has(matchId)) return;
+    const m = MATCHES.find((x) => x.id === matchId);
+    if (!m || isMatchLocked(m)) return;
     setDrafts((prev) => {
-      const d = prev[matchId] ?? { home: "", away: "", winner: null };
+      const saved = predMap.get(matchId);
+      const fallback = saved
+        ? { home: saved.home_score !== null ? String(saved.home_score) : "", away: saved.away_score !== null ? String(saved.away_score) : "", winner: saved.predicted_winner }
+        : { home: "", away: "", winner: null };
+      const d = prev[matchId] ?? fallback;
       return { ...prev, [matchId]: { ...d, winner: d.winner === w ? null : w } };
     });
   };
@@ -369,15 +376,21 @@ export default function PredictorPage() {
         {/* ── TORNEO ── */}
         {tab === "torneo" && (
           <div className="px-4 pt-3 pb-28 flex flex-col gap-3">
-            {pendingMatches.length === 0 && (
-              <div className="flex flex-col items-center justify-center gap-4 p-8 min-h-[300px]">
-                <span className="text-[48px]">✅</span>
+            {openUnpredicted.length === 0 && torneoMatches.length > 0 && (
+              <div className="flex flex-col items-center justify-center gap-3 p-6 rounded-[18px]"
+                style={{ background: "var(--atlas-surface)", border: "1px solid var(--atlas-border-card)" }}>
+                <span className="text-[40px]">✅</span>
                 <span className="text-[14px] text-atlas-muted text-center">{t("all_done")}</span>
               </div>
             )}
-            {pendingMatches.map((m) => {
-              const d = drafts[m.id] ?? { home: "", away: "", winner: null };
-              const canSave = !!d.winner && saving !== m.id;
+            {torneoMatches.map((m) => {
+              const isLocked = isMatchLocked(m);
+              const savedPred = predMap.get(m.id);
+              const fallbackDraft: Draft = savedPred
+                ? { home: savedPred.home_score !== null ? String(savedPred.home_score) : "", away: savedPred.away_score !== null ? String(savedPred.away_score) : "", winner: savedPred.predicted_winner }
+                : { home: "", away: "", winner: null };
+              const d = drafts[m.id] ?? fallbackDraft;
+              const canSave = !!d.winner && saving !== m.id && !isLocked;
               const isPinnedAny =
                 (pickerPinnedGroupIds[m.id]?.length ?? 0) > 0 ||
                 pinnedMatches.some((p) => p.match_id === m.id);
@@ -386,16 +399,27 @@ export default function PredictorPage() {
               return (
                 <div
                   key={m.id}
-                  className="rounded-[18px] p-4"
-                  style={{ background: "var(--atlas-surface)", border: "1px solid var(--atlas-border-card)" }}
+                  className="rounded-[18px] p-4 transition-opacity"
+                  style={{
+                    background: "var(--atlas-surface)",
+                    border: "1px solid var(--atlas-border-card)",
+                    opacity: isLocked ? 0.5 : 1,
+                  }}
                 >
-                  {/* Header: date + pin button */}
+                  {/* Header: date + status */}
                   <div className="flex items-center justify-between mb-3">
-                    <div
-                      className="text-[10px] font-bold tracking-widest text-atlas-primary"
-                      style={{ fontFamily: "var(--font-display)" }}
-                    >
-                      {formatMatchDay(m.date, locale)}
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="text-[10px] font-bold tracking-widest text-atlas-primary"
+                        style={{ fontFamily: "var(--font-display)" }}
+                      >
+                        {formatMatchDay(m.date, locale)}
+                      </div>
+                      {isLocked && (
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: "rgba(74,81,120,0.2)", color: "#4A5178" }}>
+                          🔒
+                        </span>
+                      )}
                     </div>
                     {groups.length > 0 && (
                       <button
@@ -441,6 +465,7 @@ export default function PredictorPage() {
                   <div className="flex items-center justify-between gap-2 mb-3">
                     <button
                       onClick={() => toggleWinner(m.id, "home")}
+                      disabled={isLocked}
                       className="flex-1 flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl transition-all"
                       style={{
                         background: d.winner === "home" ? "rgba(249,115,22,0.15)" : "var(--atlas-glass-sm)",
@@ -457,7 +482,8 @@ export default function PredictorPage() {
                       <input
                         type="number" min="0" max="20" placeholder="–"
                         value={d.home}
-                        onChange={(e) => updateScore(m.id, "home", e.target.value)}
+                        onChange={(e) => !isLocked && updateScore(m.id, "home", e.target.value)}
+                        readOnly={isLocked}
                         className="w-9 h-9 text-center text-[16px] font-bold rounded-xl outline-none"
                         style={{ background: "var(--atlas-surface2)", border: "1px solid var(--atlas-border-md)" }}
                       />
@@ -465,7 +491,8 @@ export default function PredictorPage() {
                       <input
                         type="number" min="0" max="20" placeholder="–"
                         value={d.away}
-                        onChange={(e) => updateScore(m.id, "away", e.target.value)}
+                        onChange={(e) => !isLocked && updateScore(m.id, "away", e.target.value)}
+                        readOnly={isLocked}
                         className="w-9 h-9 text-center text-[16px] font-bold rounded-xl outline-none"
                         style={{ background: "var(--atlas-surface2)", border: "1px solid var(--atlas-border-md)" }}
                       />
@@ -473,6 +500,7 @@ export default function PredictorPage() {
 
                     <button
                       onClick={() => toggleWinner(m.id, "away")}
+                      disabled={isLocked}
                       className="flex-1 flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl transition-all"
                       style={{
                         background: d.winner === "away" ? "rgba(249,115,22,0.15)" : "var(--atlas-glass-sm)",
@@ -498,7 +526,7 @@ export default function PredictorPage() {
                       opacity: canSave ? 1 : 0.6,
                     }}
                   >
-                    {saving === m.id ? t("saving") : t("save_score")}
+                    {saving === m.id ? t("saving") : isLocked ? "🔒 Bloqueado" : savedPred ? "Actualizar predicción" : t("save_score")}
                   </button>
                 </div>
               );
