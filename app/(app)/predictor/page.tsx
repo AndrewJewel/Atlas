@@ -8,7 +8,7 @@ import { TeamFlag } from "@/components/flags/TeamFlag";
 import Image from "next/image";
 import { useUser } from "@/hooks/use-user";
 import {
-  savePrediction,
+  savePredictionSecure,
   loadUserPredictions,
   getGlobalRanking,
   getGroupRanking,
@@ -242,7 +242,9 @@ export default function PredictorPage() {
     setSaving(matchId);
     const hs = d.home !== "" ? parseInt(d.home) : null;
     const as_ = d.away !== "" ? parseInt(d.away) : null;
-    const { error } = await savePrediction(user.id, matchId, hs, as_, d.winner);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) { setSaving(null); return; }
+    const { error } = await savePredictionSecure(session.access_token, matchId, hs, as_, d.winner);
     if (!error) await load();
     setSaving(null);
   };

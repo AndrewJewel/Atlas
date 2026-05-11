@@ -114,8 +114,6 @@ export async function savePrediction(
 }
 
 // Versión segura: valida el kickoff server-side antes de guardar la predicción.
-// TODO: migrar los callers en `app/predictor/page.tsx` para usar esta función
-// en lugar de llamar a savePrediction() directamente con el userId del cliente.
 export async function savePredictionSecure(
   accessToken: string,
   matchId: number,
