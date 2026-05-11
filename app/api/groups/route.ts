@@ -6,6 +6,21 @@ function genCode() {
   return "ATL-" + Array.from({ length: 4 }, () => CHARS[Math.floor(Math.random() * CHARS.length)]).join("");
 }
 
+// Rate limiter in-memory para búsqueda por código (máx 10 intentos/min por IP)
+const codeSearchLimitMap = new Map<string, { count: number; resetAt: number }>();
+
+function checkCodeSearchLimit(ip: string): boolean {
+  const now = Date.now();
+  const entry = codeSearchLimitMap.get(ip);
+  if (!entry || now > entry.resetAt) {
+    codeSearchLimitMap.set(ip, { count: 1, resetAt: now + 60_000 });
+    return true;
+  }
+  if (entry.count >= 10) return false;
+  entry.count++;
+  return true;
+}
+
 // Cliente admin (service role) — solo para operaciones de servidor
 function adminClient() {
   return createClient(
@@ -27,13 +42,23 @@ async function getUserIdFromRequest(req: NextRequest): Promise<string | null> {
   return user.id;
 }
 
-// GET /api/groups?code=ATL-XXXX  → preview público (sin auth)
+// GET /api/groups?code=ATL-XXXX  → buscar grupo por código (requiere auth + rate limit)
 // GET /api/groups                 → grupos del usuario autenticado
 export async function GET(req: NextRequest) {
   const sb = adminClient();
   const code = req.nextUrl.searchParams.get("code");
 
   if (code) {
+    // Rate limit por IP — máx 10 intentos por minuto
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+    if (!checkCodeSearchLimit(ip)) {
+      return NextResponse.json({ error: "Demasiados intentos. Espera un momento." }, { status: 429 });
+    }
+
+    // Requerir autenticación para evitar enumeración por fuerza bruta
+    const userId = await getUserIdFromRequest(req);
+    if (!userId) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+
     const { data: group } = await sb
       .from("groups")
       .select("id, name, code, members:group_members(id, user_id, username, avatar, joined_at)")

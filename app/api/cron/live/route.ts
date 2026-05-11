@@ -13,12 +13,14 @@ function norm(code: string) {
 }
 
 export async function GET(req: Request) {
-  // Vercel cron sends this header automatically in production
-  if (
-    process.env.NODE_ENV === "production" &&
-    req.headers.get("authorization") !== `Bearer ${process.env.CRON_SECRET}`
-  ) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  // Fail hard if secret is not configured — prevents "Bearer undefined" bypass
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) {
+    console.error("CRON_SECRET not configured");
+    return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
+  }
+  if (req.headers.get("authorization") !== `Bearer ${cronSecret}`) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const supabase = createClient(
