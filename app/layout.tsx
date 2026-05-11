@@ -54,6 +54,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <UserProvider>{children}</UserProvider>
           </LanguageProvider>
         </ThemeProvider>
+        <footer style={{ display: "none" }}>
+          <a href="/privacidad">Política de Privacidad</a>
+          <a href="/terminos">Términos de Servicio</a>
+        </footer>
       </body>
     </html>
   );
