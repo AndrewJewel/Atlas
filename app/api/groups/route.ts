@@ -95,9 +95,27 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   const { name, username, avatar } = body;
 
-  if (!name?.trim() || !username) {
-    return NextResponse.json({ error: "Faltan datos" }, { status: 400 });
+  if (!name || typeof name !== "string") {
+    return NextResponse.json({ error: "Nombre requerido" }, { status: 400 });
   }
+  const trimmedName = name.trim();
+  if (trimmedName.length < 1 || trimmedName.length > 50) {
+    return NextResponse.json({ error: "El nombre debe tener entre 1 y 50 caracteres" }, { status: 400 });
+  }
+
+  if (!username || typeof username !== "string") {
+    return NextResponse.json({ error: "Username requerido" }, { status: 400 });
+  }
+  const trimmedUsername = username.trim();
+  if (trimmedUsername.length < 3 || trimmedUsername.length > 24) {
+    return NextResponse.json({ error: "Username debe tener entre 3 y 24 caracteres" }, { status: 400 });
+  }
+
+  const HEX_COLOR = /^#[0-9A-Fa-f]{3,8}$/;
+  const safeAvatar = {
+    emoji: typeof avatar?.emoji === "string" ? avatar.emoji.slice(0, 8) : "⭐",
+    bg: typeof avatar?.bg === "string" && HEX_COLOR.test(avatar.bg) ? avatar.bg : "#F97316",
+  };
 
   let code = genCode();
   for (let i = 0; i < 5; i++) {
@@ -108,7 +126,7 @@ export async function POST(req: NextRequest) {
 
   const { data: group, error } = await sb
     .from("groups")
-    .insert({ name: name.trim(), code, created_by: userId })
+    .insert({ name: trimmedName, code, created_by: userId })
     .select()
     .single();
 
@@ -116,13 +134,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No se pudo crear el grupo" }, { status: 500 });
   }
 
-  await sb.from("group_members").insert({ group_id: group.id, user_id: userId, username, avatar });
+  await sb.from("group_members").insert({ group_id: group.id, user_id: userId, username: trimmedUsername, avatar: safeAvatar });
 
   const member = {
     id: crypto.randomUUID(),
     user_id: userId,
-    username,
-    avatar,
+    username: trimmedUsername,
+    avatar: safeAvatar,
     joined_at: new Date().toISOString(),
   };
   return NextResponse.json({ group: { ...group, members: [member] } });

@@ -31,6 +31,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Código requerido" }, { status: 400 });
   }
 
+  if (!username || typeof username !== "string") {
+    return NextResponse.json({ error: "Username requerido" }, { status: 400 });
+  }
+  const trimmedUsername = username.trim();
+  if (trimmedUsername.length < 3 || trimmedUsername.length > 24) {
+    return NextResponse.json({ error: "Username debe tener entre 3 y 24 caracteres" }, { status: 400 });
+  }
+
+  const HEX_COLOR = /^#[0-9A-Fa-f]{3,8}$/;
+  const safeAvatar = {
+    emoji: typeof avatar?.emoji === "string" ? avatar.emoji.slice(0, 8) : "⭐",
+    bg: typeof avatar?.bg === "string" && HEX_COLOR.test(avatar.bg) ? avatar.bg : "#F97316",
+  };
+
   const { data: group } = await sb
     .from("groups")
     .select("*, members:group_members(id, user_id, username, avatar, joined_at)")
@@ -46,8 +60,8 @@ export async function POST(req: NextRequest) {
     await sb.from("group_members").insert({
       group_id: group.id,
       user_id: userId,
-      username: username ?? "Anónimo",
-      avatar: avatar ?? { emoji: "⭐", bg: "#F97316" },
+      username: trimmedUsername,
+      avatar: safeAvatar,
     });
   }
 
