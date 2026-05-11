@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { motion, useMotionValue } from "framer-motion";
 import type { User } from "@/lib/types";
 import AgentAvatar from "@/components/AgentAvatar";
+import { supabase } from "@/lib/supabase";
 
 interface Message {
   role: "user" | "atlas";
@@ -100,9 +101,14 @@ export function AtlasWidget({ user }: { user: User }) {
       }));
       history.push({ role: "user", content: msg });
 
+      // B9: include Authorization header so the endpoint doesn't return 401
+      const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch("/api/atlas", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session?.access_token ?? ""}`,
+        },
         body: JSON.stringify({ message: msg, history, context: "widget" }),
       });
       const data = await res.json();

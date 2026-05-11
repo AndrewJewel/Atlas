@@ -132,9 +132,14 @@ export default function ChatPage() {
     if (mentionsAtlas) {
       setAtlasTyping(true);
       try {
+        // B9: include Authorization header so the endpoint doesn't return 401
+        const { data: { session } } = await supabase.auth.getSession();
         const res = await fetch("/api/atlas", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session?.access_token ?? ""}`,
+          },
           body: JSON.stringify({ message: text, context: "group-chat" }),
         });
         const resData = await res.json();

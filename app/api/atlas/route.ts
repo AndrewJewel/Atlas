@@ -1,6 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+// ── Rate limiter in-memory (C6) ───────────────────────────────────────────────
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT = 20;
+const RATE_WINDOW_MS = 60_000;
+
+function checkRateLimit(userId: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(userId);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(userId, { count: 1, resetAt: now + RATE_WINDOW_MS });
+    return true;
+  }
+  if (entry.count >= RATE_LIMIT) return false;
+  entry.count++;
+  return true;
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 function adminClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -48,19 +66,32 @@ export async function POST(req: NextRequest) {
       context?: string;
     };
 
+    // ── Input sanitization (C6) ───────────────────────────────────────────────
+    const safeMessage = (message as string)?.slice(0, 1000) ?? "";
+    const safeHistory = Array.isArray(history) ? history.slice(-6) : [];
+
+    // Rate limit: 20 requests per minute per user (C6)
+    if (!checkRateLimit(userId)) {
+      return NextResponse.json(
+        { error: "Demasiadas solicitudes. Espera un momento." },
+        { status: 429 }
+      );
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     const isGroupChat = context === "group-chat";
     const maxTokens = isGroupChat ? 150 : 300;
 
     const messages: Array<{ role: "user" | "assistant"; content: string }> = [];
 
-    for (const h of history) {
+    for (const h of safeHistory) {
       if (h.role === "user" || h.role === "assistant") {
         messages.push({ role: h.role, content: h.content });
       }
     }
 
     if (!messages.length || messages[messages.length - 1].role !== "user") {
-      messages.push({ role: "user", content: message });
+      messages.push({ role: "user", content: safeMessage });
     }
 
     const res = await fetch("https://api.deepseek.com/chat/completions", {
