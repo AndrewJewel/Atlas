@@ -32,7 +32,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https:",
               "font-src 'self'",
-              "connect-src *",
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.deepseek.com https://flagcdn.com",
               "worker-src 'self' blob:",
               "manifest-src 'self'",
               "frame-ancestors 'none'",
