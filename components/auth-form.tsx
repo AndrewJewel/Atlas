@@ -8,6 +8,7 @@ interface Props {
 }
 
 type Tab = "register" | "login";
+type Mode = "auth" | "recover";
 
 const ERR: Record<string, string> = {
   "Invalid login credentials": "Email o contraseña incorrectos.",
@@ -22,6 +23,7 @@ function humanize(msg: string): string {
 
 export function AuthForm({ onSuccess, onModeChange }: Props) {
   const [tab, setTab] = useState<Tab>("register");
+  const [mode, setMode] = useState<Mode>("auth");
 
   const switchTab = (t: Tab) => { setTab(t); onModeChange?.(t); };
   const [email, setEmail] = useState("");
@@ -30,10 +32,12 @@ export function AuthForm({ onSuccess, onModeChange }: Props) {
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
+  const [recoverySent, setRecoverySent] = useState(false);
 
   const passwordOk = password.length >= 8;
   const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const canSubmit = emailOk && passwordOk && !loading;
+  const canRecover = emailOk && !loading;
 
   async function handleSubmit() {
     if (!canSubmit) return;
@@ -71,6 +75,104 @@ export function AuthForm({ onSuccess, onModeChange }: Props) {
     });
   }
 
+  function openRecover() {
+    setMode("recover");
+    setError("");
+    setInfo("");
+    setRecoverySent(false);
+  }
+
+  function backToAuth() {
+    setMode("auth");
+    setError("");
+    setInfo("");
+    setRecoverySent(false);
+  }
+
+  async function handleRecover() {
+    if (!canRecover) return;
+    setError("");
+    setLoading(true);
+    const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/reset-password`,
+    });
+    setLoading(false);
+    if (err) { setError(humanize(err.message)); return; }
+    setRecoverySent(true);
+  }
+
+  // ── Recovery view ───────────────────────────────────────
+  if (mode === "recover") {
+    return (
+      <div className="flex flex-col gap-0">
+        <h2
+          style={{ fontFamily: "var(--font-display)", color: "#FFFFFF" }}
+          className="text-[24px] font-extrabold text-center mb-1.5"
+        >
+          Recuperar contraseña
+        </h2>
+        <p className="text-[13px] text-center mb-6" style={{ color: "rgba(255,255,255,0.7)" }}>
+          Te enviaremos un enlace para crear una nueva.
+        </p>
+
+        {!recoverySent ? (
+          <>
+            <input
+              type="email"
+              autoComplete="email"
+              placeholder="tu@email.com"
+              value={email}
+              onChange={(e) => { setEmail(e.target.value); setError(""); }}
+              onKeyDown={(e) => e.key === "Enter" && handleRecover()}
+              className="w-full px-4 py-3.5 rounded-2xl text-atlas-text text-[15px] outline-none mb-2"
+              style={{
+                background: "#181B30",
+                border: `1.5px solid ${error ? "#EF4444" : "rgba(255,255,255,0.1)"}`,
+                fontFamily: "var(--font-sans)",
+              }}
+            />
+            {error && (
+              <p className="text-[12px] text-red-400 mb-2 px-1">{error}</p>
+            )}
+            <button
+              onClick={handleRecover}
+              disabled={!canRecover}
+              className="w-full py-4 rounded-2xl text-white text-[18px] font-bold tracking-wide transition-opacity mt-1"
+              style={{
+                background: "#F97316",
+                opacity: canRecover ? 1 : 0.4,
+                fontFamily: "var(--font-display)",
+              }}
+            >
+              {loading ? "..." : "Enviar enlace"}
+            </button>
+          </>
+        ) : (
+          <div
+            className="rounded-2xl px-4 py-4 mb-2"
+            style={{
+              background: "rgba(34,197,94,0.10)",
+              border: "1.5px solid rgba(34,197,94,0.30)",
+            }}
+          >
+            <p className="text-[14px] leading-relaxed" style={{ color: "rgba(255,255,255,0.88)" }}>
+              ✉️ Revisa <span className="font-semibold">{email}</span>. Te enviamos un enlace para recuperar tu contraseña.
+            </p>
+          </div>
+        )}
+
+        <button
+          onClick={backToAuth}
+          className="w-full py-3 text-[14px] mt-3 text-center"
+          style={{ color: "rgba(255,255,255,0.55)", fontFamily: "var(--font-sans)" }}
+        >
+          ← Volver al login
+        </button>
+      </div>
+    );
+  }
+
+  // ── Default auth view (register/login) ──────────────────
   return (
     <div className="flex flex-col gap-0">
       {/* Tabs */}
@@ -168,6 +270,18 @@ export function AuthForm({ onSuccess, onModeChange }: Props) {
           </button>
         </div>
       </div>
+
+      {/* Forgot password (only in login) */}
+      {tab === "login" && (
+        <button
+          type="button"
+          onClick={openRecover}
+          className="self-end text-[12px] mb-2 px-1 hover:underline transition-opacity"
+          style={{ color: "rgba(255,255,255,0.55)", fontFamily: "var(--font-sans)" }}
+        >
+          ¿Olvidaste tu contraseña?
+        </button>
+      )}
 
       {/* Error / Info */}
       {error && (
