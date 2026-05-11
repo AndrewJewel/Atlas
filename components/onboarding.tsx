@@ -98,6 +98,7 @@ export function Onboarding({ startAtStep = 0, onComplete }: Props) {
           <p className="text-[12px] mt-3 text-center" style={{ color: "rgba(255,255,255,0.45)" }}>
             Regístrate en 30 segundos · gratis
           </p>
+          <LegalLinks />
         </div>
       )}
 
@@ -117,6 +118,7 @@ export function Onboarding({ startAtStep = 0, onComplete }: Props) {
             Para guardar tu progreso y chatear con otros fans.
           </p>
           <AuthForm onSuccess={() => setStep(2)} />
+          <LegalLinks />
         </div>
       )}
 
@@ -307,6 +309,21 @@ function Logo() {
         Atlas
       </span>
     </div>
+  );
+}
+
+function LegalLinks() {
+  return (
+    <p className="text-[11px] text-center mt-4 pb-2" style={{ color: "rgba(255,255,255,0.35)" }}>
+      Al continuar aceptas nuestros{" "}
+      <a href="/terminos" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-80 transition-opacity">
+        Términos de Servicio
+      </a>{" "}
+      y{" "}
+      <a href="/privacidad" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-80 transition-opacity">
+        Política de Privacidad
+      </a>
+    </p>
   );
 }
 
