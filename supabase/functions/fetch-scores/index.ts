@@ -14,7 +14,19 @@ const CONMEBOL = new Set([
   "ARG", "BRA", "URU", "COL", "CHI", "ECU", "PAR", "PER", "VEN", "BOL",
 ]);
 
-Deno.serve(async () => {
+Deno.serve(async (req) => {
+  // Verificar secret de autorización
+  const secret = Deno.env.get("FETCH_SCORES_SECRET");
+  if (secret) {
+    const authHeader = req.headers.get("x-fetch-secret");
+    if (authHeader !== secret) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+  }
+
   try {
     const res = await fetch(ESPN_URL);
     const data = await res.json();
