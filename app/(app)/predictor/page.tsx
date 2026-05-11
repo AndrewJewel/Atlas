@@ -164,20 +164,19 @@ export default function PredictorPage() {
   // Load group bets when a match is expanded
   useEffect(() => {
     setBetSaveResult(null);
+    setBetDraft({ home: "", away: "", winner: null }); // reset immediately so no group bleeds into another
     if (!selectedMatchId || !ppGroupId) { setGroupBets([]); return; }
     setLoadingBets(true);
     getGroupMatchBets(ppGroupId, selectedMatchId).then((bets) => {
       setGroupBets(bets);
       const myBet = bets.find((b) => b.user_id === user?.id)?.bet;
-      setBetDraft(
-        myBet
-          ? {
-              home: myBet.home_score !== null ? String(myBet.home_score) : "",
-              away: myBet.away_score !== null ? String(myBet.away_score) : "",
-              winner: myBet.predicted_winner,
-            }
-          : { home: "", away: "", winner: null }
-      );
+      if (myBet) {
+        setBetDraft({
+          home: myBet.home_score !== null ? String(myBet.home_score) : "",
+          away: myBet.away_score !== null ? String(myBet.away_score) : "",
+          winner: myBet.predicted_winner,
+        });
+      }
     }).finally(() => setLoadingBets(false));
   }, [selectedMatchId, ppGroupId, user?.id]);
 
