@@ -175,6 +175,16 @@ const translations = {
     pred_update_bet: "Actualizar apuesta",
     pred_edit_bet: "Tu apuesta · Editar",
     pred_no_members: "Sin miembros en este grupo",
+    // Install prompt
+    inst_title: "¡Ya casi, {name}!",
+    inst_sub: "Instala Atlas en tu teléfono para no perderte ningún partido",
+    inst_b1: "Notificaciones cuando juegue tu selección",
+    inst_b2: "Acceso instantáneo como app nativa",
+    inst_b3: "Funciona aunque pierdas señal",
+    inst_install: "Instalar app",
+    inst_skip: "Continuar en el navegador",
+    inst_ios_1: "Toca el botón Compartir",
+    inst_ios_2: "y elige \"Añadir a pantalla de inicio\"",
   },
 
   en: {
@@ -337,6 +347,16 @@ const translations = {
     pred_update_bet: "Update bet",
     pred_edit_bet: "Your bet · Edit",
     pred_no_members: "No members in this group",
+    // Install prompt
+    inst_title: "Almost there, {name}!",
+    inst_sub: "Install Atlas on your phone so you don't miss any match",
+    inst_b1: "Notifications when your team plays",
+    inst_b2: "Instant access like a native app",
+    inst_b3: "Works even if you lose signal",
+    inst_install: "Install app",
+    inst_skip: "Continue in browser",
+    inst_ios_1: "Tap the Share button",
+    inst_ios_2: "and choose \"Add to Home Screen\"",
   },
 
   pt: {
@@ -499,6 +519,16 @@ const translations = {
     pred_update_bet: "Atualizar aposta",
     pred_edit_bet: "Sua aposta · Editar",
     pred_no_members: "Sem membros neste grupo",
+    // Install prompt
+    inst_title: "Quase lá, {name}!",
+    inst_sub: "Instale o Atlas no seu celular para não perder nenhum jogo",
+    inst_b1: "Notificações quando seu time joga",
+    inst_b2: "Acesso instantâneo como app nativo",
+    inst_b3: "Funciona mesmo sem sinal",
+    inst_install: "Instalar app",
+    inst_skip: "Continuar no navegador",
+    inst_ios_1: "Toque no botão Compartilhar",
+    inst_ios_2: "e escolha \"Adicionar à Tela de Início\"",
   },
 } as const;
 

@@ -49,6 +49,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             __html: `(function(){var t=localStorage.getItem('atlas-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);})()`,
           }}
         />
+        {/* Capturar beforeinstallprompt temprano para que el modal post-registro pueda dispararlo */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__deferredInstallPrompt=e;});`,
+          }}
+        />
         <ThemeProvider>
           <LanguageProvider>
             <UserProvider>{children}</UserProvider>
