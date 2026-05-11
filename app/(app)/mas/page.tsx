@@ -10,6 +10,7 @@ import { LANGS, type Lang } from "@/lib/i18n";
 import { AppHeader } from "@/components/app-header";
 import { TrophyIcon } from "@/components/TrophyIcon";
 import { loadUserPredictions, getLevel } from "@/lib/predictions";
+import { supabase } from "@/lib/supabase";
 
 export default function MasPage() {
   const { user, completeProfile, signOut } = useUser();
@@ -24,6 +25,10 @@ export default function MasPage() {
   const [signingOut, setSigningOut] = useState(false);
   const [showLangPicker, setShowLangPicker] = useState(false);
   const [totalPoints, setTotalPoints] = useState(0);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   useEffect(() => {
     if (!user?.id) return;
@@ -56,6 +61,28 @@ export default function MasPage() {
 
   async function handleSignOut() {
     setSigningOut(true);
+    await signOut();
+    router.replace("/");
+  }
+
+  async function handleDeleteAccount() {
+    if (deleteConfirmText !== user?.username || deleting) return;
+    setDeleting(true);
+    setDeleteError("");
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) { setDeleting(false); setDeleteError(t("del_error")); return; }
+    const res = await fetch("/api/account/delete", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${session.access_token}`,
+      },
+    });
+    if (!res.ok) {
+      setDeleting(false);
+      setDeleteError(t("del_error"));
+      return;
+    }
     await signOut();
     router.replace("/");
   }
@@ -236,7 +263,90 @@ export default function MasPage() {
           </div>
         </button>
 
+        {/* ── Delete account ───────────────────────────────── */}
+        <button
+          onClick={() => { setShowDeleteModal(true); setDeleteConfirmText(""); setDeleteError(""); }}
+          className="w-full text-center py-4 mt-4 text-[13px] underline transition-opacity hover:opacity-70"
+          style={{ color: "rgba(239,68,68,0.7)", fontFamily: "var(--font-sans)" }}
+        >
+          {t("del_label")}
+        </button>
+
       </div>
+
+      {/* ── Delete Account Modal ─────────────────────────────── */}
+      {showDeleteModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center"
+          style={{ background: "rgba(0,0,0,0.7)" }}
+          onClick={() => !deleting && setShowDeleteModal(false)}
+        >
+          <div
+            className="w-full max-w-lg rounded-t-[28px] p-6 pb-8"
+            style={{ background: "var(--atlas-surface)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{ background: "var(--atlas-glass-border)" }} />
+            <div className="flex items-center gap-2.5 mb-3">
+              <span className="text-[28px]">⚠️</span>
+              <h2
+                style={{ fontFamily: "var(--font-display)", color: "#EF4444" }}
+                className="text-[22px] font-bold"
+              >
+                {t("del_title")}
+              </h2>
+            </div>
+            <p className="text-[13px] mb-5 leading-relaxed" style={{ color: "var(--atlas-text)" }}>
+              {t("del_warning")}
+            </p>
+            <label className="text-[12px] font-semibold text-atlas-dimmed mb-2 block">
+              {t("del_confirm_label")} <span style={{ color: "#EF4444" }}>{user?.username}</span>
+            </label>
+            <input
+              autoFocus
+              value={deleteConfirmText}
+              onChange={(e) => { setDeleteConfirmText(e.target.value); setDeleteError(""); }}
+              disabled={deleting}
+              className="w-full px-4 py-3.5 rounded-2xl text-atlas-text text-[15px] outline-none mb-3"
+              style={{
+                background: "#181B30",
+                border: `1.5px solid ${deleteError ? "#EF4444" : "rgba(255,255,255,0.1)"}`,
+                fontFamily: "var(--font-sans)",
+              }}
+            />
+            {deleteError && (
+              <p className="text-[12px] text-red-400 mb-3">{deleteError}</p>
+            )}
+            <div className="flex gap-2.5 mt-2">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                disabled={deleting}
+                className="flex-1 py-3.5 rounded-2xl text-[15px] font-semibold transition-opacity"
+                style={{
+                  background: "var(--atlas-glass)",
+                  color: "var(--atlas-text)",
+                  fontFamily: "var(--font-sans)",
+                  opacity: deleting ? 0.5 : 1,
+                }}
+              >
+                {t("del_cancel")}
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleteConfirmText !== user?.username || deleting}
+                className="flex-1 py-3.5 rounded-2xl text-[15px] font-bold text-white transition-opacity"
+                style={{
+                  background: "#EF4444",
+                  fontFamily: "var(--font-display)",
+                  opacity: deleteConfirmText === user?.username && !deleting ? 1 : 0.4,
+                }}
+              >
+                {deleting ? t("del_deleting") : t("del_btn")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Language Picker Sheet ────────────────────────────── */}
       {showLangPicker && (

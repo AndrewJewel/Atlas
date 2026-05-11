@@ -185,6 +185,16 @@ const translations = {
     inst_skip: "Continuar en el navegador",
     inst_ios_1: "Toca el botón Compartir",
     inst_ios_2: "y elige \"Añadir a pantalla de inicio\"",
+    // Delete account
+    del_label: "Eliminar cuenta",
+    del_sub: "Borra tu cuenta y todos tus datos",
+    del_title: "¿Eliminar tu cuenta?",
+    del_warning: "Esta acción no se puede deshacer. Se borrarán para siempre tu perfil, predicciones, apuestas, mensajes y láminas.",
+    del_confirm_label: "Escribe tu usuario para confirmar:",
+    del_btn: "Eliminar cuenta",
+    del_cancel: "Cancelar",
+    del_deleting: "Eliminando...",
+    del_error: "Error al eliminar. Intenta de nuevo.",
   },
 
   en: {
@@ -357,6 +367,16 @@ const translations = {
     inst_skip: "Continue in browser",
     inst_ios_1: "Tap the Share button",
     inst_ios_2: "and choose \"Add to Home Screen\"",
+    // Delete account
+    del_label: "Delete account",
+    del_sub: "Erase your account and all your data",
+    del_title: "Delete your account?",
+    del_warning: "This action cannot be undone. Your profile, predictions, bets, messages and stickers will be permanently deleted.",
+    del_confirm_label: "Type your username to confirm:",
+    del_btn: "Delete account",
+    del_cancel: "Cancel",
+    del_deleting: "Deleting...",
+    del_error: "Error deleting. Please try again.",
   },
 
   pt: {
@@ -529,6 +549,16 @@ const translations = {
     inst_skip: "Continuar no navegador",
     inst_ios_1: "Toque no botão Compartilhar",
     inst_ios_2: "e escolha \"Adicionar à Tela de Início\"",
+    // Delete account
+    del_label: "Excluir conta",
+    del_sub: "Apaga sua conta e todos os seus dados",
+    del_title: "Excluir sua conta?",
+    del_warning: "Esta ação não pode ser desfeita. Seu perfil, previsões, apostas, mensagens e figurinhas serão excluídos permanentemente.",
+    del_confirm_label: "Digite seu usuário para confirmar:",
+    del_btn: "Excluir conta",
+    del_cancel: "Cancelar",
+    del_deleting: "Excluindo...",
+    del_error: "Erro ao excluir. Tente novamente.",
   },
 } as const;
 
