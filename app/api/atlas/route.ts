@@ -2,23 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { checkOrigin } from "@/lib/cors";
 
-// ── Rate limiter in-memory (C6) ───────────────────────────────────────────────
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT = 20;
-const RATE_WINDOW_MS = 60_000;
+// NOTA: El rate limit in-memory anterior (Map) se eliminó porque no funciona
+// cross-instancia en entornos serverless (cada Lambda fría arranca con Map vacío).
+// Ahora usamos atlas_usage en Supabase con UPSERT atómico para cap diario real.
 
-function checkRateLimit(userId: string): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(userId);
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(userId, { count: 1, resetAt: now + RATE_WINDOW_MS });
-    return true;
-  }
-  if (entry.count >= RATE_LIMIT) return false;
-  entry.count++;
-  return true;
-}
-// ─────────────────────────────────────────────────────────────────────────────
+const DAILY_LIMIT = 50;
 
 function adminClient() {
   return createClient(
@@ -36,6 +24,26 @@ async function getUserIdFromRequest(req: NextRequest): Promise<string | null> {
   const { data: { user }, error } = await sb.auth.getUser(token);
   if (error || !user) return null;
   return user.id;
+}
+
+/**
+ * Incrementa el contador diario del usuario y devuelve el total actual.
+ * Usa una RPC con INSERT … ON CONFLICT DO UPDATE atómico para evitar
+ * race conditions entre instancias serverless.
+ */
+async function incrementAndCheckDailyLimit(userId: string): Promise<{ allowed: boolean; count: number }> {
+  const sb = adminClient();
+  const { data, error } = await sb.rpc("increment_atlas_usage", { p_user_id: userId });
+
+  if (error) {
+    // En caso de error de DB, permitimos la request para no bloquear al usuario,
+    // pero lo registramos para investigar.
+    console.error("Atlas usage tracking error:", error.message);
+    return { allowed: true, count: 0 };
+  }
+
+  const count = data as number;
+  return { allowed: count <= DAILY_LIMIT, count };
 }
 
 const SYSTEM_PROMPT = `Eres Atlas IA, el asistente fanático del fútbol de la app Atlas para el Mundial 2026.
@@ -94,14 +102,15 @@ export async function POST(req: NextRequest) {
       context?: string;
     };
 
-    // ── Input sanitization (C6) ───────────────────────────────────────────────
+    // ── Input sanitization ────────────────────────────────────────────────────
     const safeMessage = (message as string)?.slice(0, 1000) ?? "";
     const safeHistory = Array.isArray(history) ? history.slice(-6) : [];
 
-    // Rate limit: 20 requests per minute per user (C6)
-    if (!checkRateLimit(userId)) {
+    // ── Cap diario via Supabase (funciona cross-instancia serverless) ─────────
+    const { allowed, count } = await incrementAndCheckDailyLimit(userId);
+    if (!allowed) {
       return NextResponse.json(
-        { error: "Demasiadas solicitudes. Espera un momento." },
+        { error: `Límite diario alcanzado (${DAILY_LIMIT} mensajes/día). Vuelve mañana. ⚽` },
         { status: 429 }
       );
     }
@@ -143,7 +152,7 @@ export async function POST(req: NextRequest) {
     const rawReply: string = data.choices?.[0]?.message?.content ?? "¡Error inesperado!";
     const reply = sanitizeAIResponse(rawReply);
 
-    return NextResponse.json({ reply });
+    return NextResponse.json({ reply, usage: { today: count, limit: DAILY_LIMIT } });
   } catch (err) {
     console.error("Atlas API error:", err instanceof Error ? err.message : "Unknown error");
     return NextResponse.json(

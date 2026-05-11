@@ -7,20 +7,10 @@ function genCode() {
   return "ATL-" + Array.from({ length: 4 }, () => CHARS[Math.floor(Math.random() * CHARS.length)]).join("");
 }
 
-// Rate limiter in-memory para búsqueda por código (máx 10 intentos/min por IP)
-const codeSearchLimitMap = new Map<string, { count: number; resetAt: number }>();
-
-function checkCodeSearchLimit(ip: string): boolean {
-  const now = Date.now();
-  const entry = codeSearchLimitMap.get(ip);
-  if (!entry || now > entry.resetAt) {
-    codeSearchLimitMap.set(ip, { count: 1, resetAt: now + 60_000 });
-    return true;
-  }
-  if (entry.count >= 10) return false;
-  entry.count++;
-  return true;
-}
+// NOTA: El rate limit in-memory anterior (Map por IP) se eliminó porque no funciona
+// cross-instancia en serverless. Para rate limit por IP se necesitaría Upstash Redis.
+// La protección anti-enumeración ahora recae en requerir autenticación (userId válido)
+// + el límite de creación de grupos por usuario (ver POST).
 
 // Cliente admin (service role) — solo para operaciones de servidor
 function adminClient() {
@@ -50,12 +40,6 @@ export async function GET(req: NextRequest) {
   const code = req.nextUrl.searchParams.get("code");
 
   if (code) {
-    // Rate limit por IP — máx 10 intentos por minuto
-    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-    if (!checkCodeSearchLimit(ip)) {
-      return NextResponse.json({ error: "Demasiados intentos. Espera un momento." }, { status: 429 });
-    }
-
     // Requerir autenticación para evitar enumeración por fuerza bruta
     const userId = await getUserIdFromRequest(req);
     if (!userId) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
@@ -121,6 +105,24 @@ export async function POST(req: NextRequest) {
   if (!userId) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
 
   const sb = adminClient();
+
+  // ── Cap diario de creación de grupos (máx 5/día por usuario) ─────────────
+  // Reemplaza el Map in-memory anterior (no funciona cross-instancia serverless).
+  const today = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
+  const { count: groupsToday, error: countError } = await sb
+    .from("groups")
+    .select("id", { count: "exact", head: true })
+    .eq("created_by", userId)
+    .gte("created_at", today);
+
+  if (!countError && (groupsToday ?? 0) >= 5) {
+    return NextResponse.json(
+      { error: "Límite diario alcanzado (5 grupos/día). Vuelve mañana." },
+      { status: 429 }
+    );
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
   const body = await req.json().catch(() => ({}));
   const { name, username, avatar } = body;
 
