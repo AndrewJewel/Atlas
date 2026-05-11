@@ -1,6 +1,7 @@
 "use client";
 export const dynamic = "force-dynamic";
 import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useUser } from "@/hooks/use-user";
@@ -91,7 +92,7 @@ export default function TeamPage() {
         <Link href="/mas/panini" className="text-[22px] text-atlas-text leading-none">←</Link>
         <div className="flex items-center gap-2.5 flex-1 min-w-0">
           {flag ? (
-            <img src={`https://flagcdn.com/w40/${flag}.png`} alt={teamName} width={32} height={22}
+            <Image src={`https://flagcdn.com/w40/${flag}.png`} alt={teamName} width={32} height={22}
               className="rounded-sm flex-shrink-0 object-cover" style={{ height:22 }} />
           ) : (
             <span className="text-[22px] flex-shrink-0">⭐</span>

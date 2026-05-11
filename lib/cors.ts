@@ -4,12 +4,9 @@ const ALLOWED_ORIGINS = [
   "http://localhost:3000",
 ];
 
-// Acepta previews de Vercel para desarrollo
 function isAllowedOrigin(origin: string | null): boolean {
   if (!origin) return true; // server-to-server, ok
-  if (ALLOWED_ORIGINS.includes(origin)) return true;
-  if (/^https:\/\/atlas-[a-z0-9-]+-[a-z0-9]+\.vercel\.app$/.test(origin)) return true;
-  return false;
+  return ALLOWED_ORIGINS.includes(origin);
 }
 
 export function checkOrigin(req: Request): Response | null {

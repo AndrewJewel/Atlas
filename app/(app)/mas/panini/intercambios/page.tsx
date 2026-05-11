@@ -1,6 +1,7 @@
 "use client";
 export const dynamic = "force-dynamic";
 import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useUser } from "@/hooks/use-user";
 import { supabase } from "@/lib/supabase";
@@ -33,7 +34,7 @@ function StickerChip({ code, name, teamCode }: { code: string; name: string; tea
   return (
     <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg" style={{ background:"var(--atlas-surface2)" }}>
       {flag ? (
-        <img src={`https://flagcdn.com/w20/${flag}.png`} alt={teamCode ?? ""} width={16} height={11}
+        <Image src={`https://flagcdn.com/w20/${flag}.png`} alt={teamCode ?? ""} width={16} height={11}
           className="rounded-sm flex-shrink-0 object-cover" style={{ height:11 }} />
       ) : <span className="text-[10px]">⭐</span>}
       <div>
