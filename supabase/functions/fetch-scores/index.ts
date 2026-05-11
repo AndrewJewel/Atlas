@@ -15,16 +15,22 @@ const CONMEBOL = new Set([
 ]);
 
 Deno.serve(async (req) => {
-  // Verificar secret de autorización
+  // Verificar secret de autorización — OBLIGATORIO.
+  // Si FETCH_SCORES_SECRET no está configurado se rechaza con 500 para evitar
+  // que la función quede abierta por error de configuración.
   const secret = Deno.env.get("FETCH_SCORES_SECRET");
-  if (secret) {
-    const authHeader = req.headers.get("x-fetch-secret");
-    if (authHeader !== secret) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
+  if (!secret) {
+    return new Response(JSON.stringify({ error: "Server misconfigured" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+  const authHeader = req.headers.get("Authorization");
+  if (authHeader !== `Bearer ${secret}`) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   try {

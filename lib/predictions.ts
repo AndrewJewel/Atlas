@@ -101,6 +101,35 @@ export async function savePrediction(
   return { error: error?.message ?? null };
 }
 
+// Versión segura: valida el kickoff server-side antes de guardar la predicción.
+// TODO: migrar los callers en `app/predictor/page.tsx` para usar esta función
+// en lugar de llamar a savePrediction() directamente con el userId del cliente.
+export async function savePredictionSecure(
+  accessToken: string,
+  matchId: number,
+  homeScore: number | null,
+  awayScore: number | null,
+  predictedWinner: PredWinner
+): Promise<{ error: string | null }> {
+  try {
+    const res = await fetch("/api/predictions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ matchId, homeScore, awayScore, predictedWinner }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      return { error: (data as { error?: string }).error ?? "Error al guardar" };
+    }
+    return { error: null };
+  } catch {
+    return { error: "Error de red" };
+  }
+}
+
 export async function loadUserPredictions(): Promise<SavedPrediction[]> {
   const { data, error } = await supabase
     .from("predictions")
