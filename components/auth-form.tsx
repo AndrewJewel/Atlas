@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 
 interface Props {
   onSuccess: () => void;
+  onModeChange?: (mode: "register" | "login") => void;
 }
 
 type Tab = "register" | "login";
@@ -19,8 +20,10 @@ function humanize(msg: string): string {
   return ERR[msg] ?? msg;
 }
 
-export function AuthForm({ onSuccess }: Props) {
+export function AuthForm({ onSuccess, onModeChange }: Props) {
   const [tab, setTab] = useState<Tab>("register");
+
+  const switchTab = (t: Tab) => { setTab(t); onModeChange?.(t); };
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
@@ -78,7 +81,7 @@ export function AuthForm({ onSuccess }: Props) {
         {(["register", "login"] as Tab[]).map((t) => (
           <button
             key={t}
-            onClick={() => { setTab(t); setError(""); setInfo(""); }}
+            onClick={() => { switchTab(t); setError(""); setInfo(""); }}
             className="flex-1 py-2.5 rounded-xl text-[14px] font-bold transition-all"
             style={{
               background: tab === t ? "#F97316" : "transparent",

@@ -14,6 +14,7 @@ interface Props {
 
 export function Onboarding({ startAtStep = 0, onComplete }: Props) {
   const [step, setStep] = useState<number>(startAtStep);
+  const [authMode, setAuthMode] = useState<"register" | "login">("register");
   const [username, setUsername] = useState("");
   const [usernameError, setUsernameError] = useState("");
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
@@ -107,17 +108,17 @@ export function Onboarding({ startAtStep = 0, onComplete }: Props) {
         <div className="flex flex-col flex-1 px-6 pt-5 overflow-y-auto">
           <Logo />
           <div className="h-6" />
-          <StepBadge label="1 / 3" />
+          {authMode === "register" && <StepBadge label="1 / 3" />}
           <h2
             style={{ fontFamily: "var(--font-display)", color: "#FFFFFF" }}
             className="text-[28px] font-extrabold text-center mb-1"
           >
-            Crea tu cuenta
+            {authMode === "login" ? "Iniciar sesión" : "Crea tu cuenta"}
           </h2>
           <p className="text-[13px] text-center mb-5" style={{ color: "rgba(255,255,255,0.7)" }}>
-            Para guardar tu progreso y chatear con otros fans.
+            {authMode === "login" ? "Bienvenido de vuelta." : "Para guardar tu progreso y chatear con otros fans."}
           </p>
-          <AuthForm onSuccess={() => setStep(2)} />
+          <AuthForm onSuccess={() => setStep(2)} onModeChange={setAuthMode} />
           <LegalLinks />
         </div>
       )}
