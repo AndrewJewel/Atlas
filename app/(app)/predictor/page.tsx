@@ -114,6 +114,7 @@ export default function PredictorPage() {
   const [liveScore, setLiveScore] = useState<LiveScore | null>(null);
   const [betDraft, setBetDraft] = useState<Draft>({ home: "", away: "", winner: null });
   const [savingBet, setSavingBet] = useState(false);
+  const [betSaveResult, setBetSaveResult] = useState<"ok" | "error" | null>(null);
 
   // ── Pin (DB) ──────────────────────────────────────────
   const [pinnedMatches, setPinnedMatches] = useState<PinnedMatch[]>([]);
@@ -162,6 +163,7 @@ export default function PredictorPage() {
 
   // Load group bets when a match is expanded
   useEffect(() => {
+    setBetSaveResult(null);
     if (!selectedMatchId || !ppGroupId) { setGroupBets([]); return; }
     setLoadingBets(true);
     getGroupMatchBets(ppGroupId, selectedMatchId).then((bets) => {
@@ -262,6 +264,7 @@ export default function PredictorPage() {
   const handleSaveBet = async (matchId: number) => {
     if (!betDraft.winner || savingBet || !user?.id || !ppGroupId) return;
     setSavingBet(true);
+    setBetSaveResult(null);
     const hs = betDraft.home !== "" ? parseInt(betDraft.home) : null;
     const as_ = betDraft.away !== "" ? parseInt(betDraft.away) : null;
     const { data: { session } } = await supabase.auth.getSession();
@@ -270,6 +273,21 @@ export default function PredictorPage() {
     if (!error) {
       const bets = await getGroupMatchBets(ppGroupId, matchId);
       setGroupBets(bets);
+      // Update betDraft from saved data to confirm persistence
+      const myBet = bets.find((b) => b.user_id === user.id)?.bet;
+      if (myBet) {
+        setBetDraft({
+          home: myBet.home_score !== null ? String(myBet.home_score) : "",
+          away: myBet.away_score !== null ? String(myBet.away_score) : "",
+          winner: myBet.predicted_winner,
+        });
+      }
+      setBetSaveResult("ok");
+      setTimeout(() => setBetSaveResult(null), 2500);
+    } else {
+      setBetSaveResult("error");
+      console.error("[handleSaveBet] error:", error);
+      setTimeout(() => setBetSaveResult(null), 3000);
     }
     setSavingBet(false);
   };
@@ -683,14 +701,14 @@ export default function PredictorPage() {
                                         disabled={!canSaveBet}
                                         className="w-full py-2 rounded-xl text-[13px] font-bold tracking-wide transition-all"
                                         style={{
-                                          background: canSaveBet ? "#F97316" : "var(--atlas-glass-sm)",
-                                          border: `1px solid ${canSaveBet ? "#F97316" : "var(--atlas-glass-md)"}`,
-                                          color: canSaveBet ? "#fff" : "#4A5178",
+                                          background: betSaveResult === "ok" ? "#22C55E" : betSaveResult === "error" ? "#EF4444" : canSaveBet ? "#F97316" : "var(--atlas-glass-sm)",
+                                          border: `1px solid ${betSaveResult === "ok" ? "#22C55E" : betSaveResult === "error" ? "#EF4444" : canSaveBet ? "#F97316" : "var(--atlas-glass-md)"}`,
+                                          color: canSaveBet || betSaveResult ? "#fff" : "#4A5178",
                                           fontFamily: "var(--font-display)",
-                                          opacity: canSaveBet ? 1 : 0.6,
+                                          opacity: canSaveBet || betSaveResult ? 1 : 0.6,
                                         }}
                                       >
-                                        {savingBet ? t("saving") : myBet ? "Actualizar apuesta" : t("save_score")}
+                                        {savingBet ? t("saving") : betSaveResult === "ok" ? "✓ Guardado" : betSaveResult === "error" ? "Error al guardar" : myBet ? "Actualizar apuesta" : t("save_score")}
                                       </button>
                                     </div>
                                   )}
