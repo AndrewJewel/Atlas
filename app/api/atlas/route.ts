@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { checkOrigin } from "@/lib/cors";
 
 // ── Rate limiter in-memory (C6) ───────────────────────────────────────────────
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
@@ -79,6 +80,9 @@ function sanitizeAIResponse(text: string): string {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
+  const originError = checkOrigin(req);
+  if (originError) return originError;
+
   try {
     const userId = await getUserIdFromRequest(req);
     if (!userId) return NextResponse.json({ reply: "No autorizado" }, { status: 401 });
@@ -141,7 +145,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ reply });
   } catch (err) {
-    console.error("Atlas API error:", err);
+    console.error("Atlas API error:", err instanceof Error ? err.message : "Unknown error");
     return NextResponse.json(
       { reply: "Tuve un problema técnico. ¡Pero el fútbol sigue! 💪" },
       { status: 500 }

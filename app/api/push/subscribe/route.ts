@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { checkOrigin } from "@/lib/cors";
 
 function adminClient() {
   return createClient(
@@ -22,6 +23,9 @@ async function getUserIdFromRequest(req: NextRequest): Promise<string | null> {
 // POST /api/push/subscribe
 // body: { endpoint, keys: { p256dh, auth } }
 export async function POST(req: NextRequest) {
+  const originError = checkOrigin(req);
+  if (originError) return originError;
+
   const userId = await getUserIdFromRequest(req);
   if (!userId) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
 

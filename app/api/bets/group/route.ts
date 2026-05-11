@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { isMatchLocked } from "@/lib/predictions";
 import { MATCHES } from "@/lib/data";
+import { checkOrigin } from "@/lib/cors";
 
 // Cliente admin (service role) — bypasa RLS, pero con validaciones server-side
 function adminClient() {
@@ -24,6 +25,9 @@ async function getUserId(req: NextRequest): Promise<string | null> {
 
 // POST /api/bets/group — guarda una apuesta de grupo con validación server-side del kickoff
 export async function POST(req: NextRequest) {
+  const originError = checkOrigin(req);
+  if (originError) return originError;
+
   const userId = await getUserId(req);
   if (!userId) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
 

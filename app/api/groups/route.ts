@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { checkOrigin } from "@/lib/cors";
 
 const CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 function genCode() {
@@ -113,6 +114,9 @@ export async function DELETE(req: NextRequest) {
 
 // POST /api/groups → crear grupo (requiere JWT)
 export async function POST(req: NextRequest) {
+  const originError = checkOrigin(req);
+  if (originError) return originError;
+
   const userId = await getUserIdFromRequest(req);
   if (!userId) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
 
