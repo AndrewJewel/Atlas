@@ -227,6 +227,34 @@ export async function saveGroupBet(
   return { error: error?.message ?? null };
 }
 
+// Versión segura: valida el kickoff server-side antes de guardar la apuesta
+export async function saveGroupBetSecure(
+  accessToken: string,
+  matchId: number,
+  groupId: string,
+  homeScore: number | null,
+  awayScore: number | null,
+  predictedWinner: PredWinner
+): Promise<{ error: string | null }> {
+  try {
+    const res = await fetch("/api/bets/group", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ matchId, groupId, homeScore, awayScore, predictedWinner }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      return { error: (data as { error?: string }).error ?? "Error al guardar" };
+    }
+    return { error: null };
+  } catch {
+    return { error: "Error de red" };
+  }
+}
+
 export async function getGroupMatchBets(
   groupId: string,
   matchId: number

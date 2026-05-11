@@ -14,7 +14,7 @@ import {
   getGroupRanking,
   getUserGroups,
   getGroupMatchBets,
-  saveGroupBet,
+  saveGroupBetSecure,
   getGroupPinnedMatches,
   pinMatchToGroup,
   unpinMatchFromGroup,
@@ -30,6 +30,7 @@ import {
   type LiveScore,
   type PinnedMatch,
 } from "@/lib/predictions";
+import { supabase } from "@/lib/supabase";
 
 const LOCALE_MAP: Record<string, string> = { es: "es-AR", en: "en-US", pt: "pt-BR" };
 
@@ -244,7 +245,9 @@ export default function PredictorPage() {
     setSavingBet(true);
     const hs = betDraft.home !== "" ? parseInt(betDraft.home) : null;
     const as_ = betDraft.away !== "" ? parseInt(betDraft.away) : null;
-    const { error } = await saveGroupBet(user.id, ppGroupId, matchId, hs, as_, betDraft.winner);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) { setSavingBet(false); return; }
+    const { error } = await saveGroupBetSecure(session.access_token, matchId, ppGroupId, hs, as_, betDraft.winner);
     if (!error) {
       const bets = await getGroupMatchBets(ppGroupId, matchId);
       setGroupBets(bets);
