@@ -1,13 +1,14 @@
 const ALLOWED_ORIGINS = [
-  "https://atlas-app.vercel.app", // producción (ajusta si el dominio es diferente)
-  "http://localhost:3000", // desarrollo local
+  "https://atlasmundialista.com",
+  "https://www.atlasmundialista.com",
+  "http://localhost:3000",
 ];
 
-// Acepta cualquier subdominio de vercel.app para previews de PR
+// Acepta previews de Vercel para desarrollo
 function isAllowedOrigin(origin: string | null): boolean {
   if (!origin) return true; // server-to-server, ok
   if (ALLOWED_ORIGINS.includes(origin)) return true;
-  if (/^https:\/\/atlas-app-[a-z0-9-]+-[a-z0-9]+\.vercel\.app$/.test(origin)) return true;
+  if (/^https:\/\/atlas-[a-z0-9-]+-[a-z0-9]+\.vercel\.app$/.test(origin)) return true;
   return false;
 }
 
