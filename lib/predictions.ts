@@ -308,6 +308,23 @@ export async function getGroupPinnedMatches(groupId: string): Promise<PinnedMatc
   }
 }
 
+export async function getMatchPinnedGroupIds(
+  matchId: number,
+  groupIds: string[]
+): Promise<string[]> {
+  if (groupIds.length === 0) return [];
+  try {
+    const { data } = await supabase
+      .from("group_pinned_matches")
+      .select("group_id")
+      .eq("match_id", matchId)
+      .in("group_id", groupIds);
+    return (data ?? []).map((r: { group_id: string }) => r.group_id);
+  } catch {
+    return [];
+  }
+}
+
 export async function pinMatchToGroup(
   userId: string,
   groupId: string,

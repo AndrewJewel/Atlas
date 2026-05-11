@@ -16,6 +16,7 @@ import {
   getGroupMatchBets,
   saveGroupBetSecure,
   getGroupPinnedMatches,
+  getMatchPinnedGroupIds,
   pinMatchToGroup,
   unpinMatchFromGroup,
   getMatchLiveScore,
@@ -117,6 +118,8 @@ export default function PredictorPage() {
   // ── Pin (DB) ──────────────────────────────────────────
   const [pinnedMatches, setPinnedMatches] = useState<PinnedMatch[]>([]);
   const [groupPickerMatchId, setGroupPickerMatchId] = useState<number | null>(null);
+  // per-match map of which groupIds it's pinned to (for the picker UI)
+  const [pickerPinnedGroupIds, setPickerPinnedGroupIds] = useState<Record<number, string[]>>({});
 
   const load = useCallback(async () => {
     if (!user?.id) return;
@@ -139,6 +142,15 @@ export default function PredictorPage() {
     if (!ppGroupId) return;
     getGroupPinnedMatches(ppGroupId).then(setPinnedMatches);
   }, [ppGroupId]);
+
+  // Load per-group pin status when picker opens for a match
+  useEffect(() => {
+    if (!groupPickerMatchId || groups.length === 0) return;
+    const groupIds = groups.map((g) => g.id);
+    getMatchPinnedGroupIds(groupPickerMatchId, groupIds).then((pinnedIds) => {
+      setPickerPinnedGroupIds((prev) => ({ ...prev, [groupPickerMatchId]: pinnedIds }));
+    });
+  }, [groupPickerMatchId, groups]);
 
   useEffect(() => {
     if (tab !== "ranking") return;
@@ -177,10 +189,17 @@ export default function PredictorPage() {
 
   const handlePin = async (matchId: number, groupId: string) => {
     if (!user?.id) return;
-    const alreadyPinned = pinnedMatches.some((p) => p.match_id === matchId);
-    if (alreadyPinned) return; // unpin only via × by the owner
+    const alreadyPinnedInGroup = (pickerPinnedGroupIds[matchId] ?? []).includes(groupId);
+    if (alreadyPinnedInGroup) return;
     await pinMatchToGroup(user.id, groupId, matchId);
-    getGroupPinnedMatches(groupId).then(setPinnedMatches);
+    setPickerPinnedGroupIds((prev) => ({
+      ...prev,
+      [matchId]: [...(prev[matchId] ?? []), groupId],
+    }));
+    // refresh Por partido tab if the pinned group is the active one
+    if (groupId === ppGroupId) {
+      getGroupPinnedMatches(ppGroupId).then(setPinnedMatches);
+    }
   };
 
   const handleUnpin = async (matchId: number, groupId: string) => {
@@ -342,7 +361,9 @@ export default function PredictorPage() {
             {pendingMatches.map((m) => {
               const d = drafts[m.id] ?? { home: "", away: "", winner: null };
               const canSave = !!d.winner && saving !== m.id;
-              const isPinnedAny = pinnedMatches.some((p) => p.match_id === m.id);
+              const isPinnedAny =
+                (pickerPinnedGroupIds[m.id]?.length ?? 0) > 0 ||
+                pinnedMatches.some((p) => p.match_id === m.id);
               const isPickerOpen = groupPickerMatchId === m.id;
 
               return (
@@ -379,7 +400,7 @@ export default function PredictorPage() {
                   {isPickerOpen && (
                     <div className="flex flex-wrap gap-1.5 mb-3">
                       {groups.map((g) => {
-                        const isPinned = pinnedMatches.some((p) => p.match_id === m.id);
+                        const isPinned = (pickerPinnedGroupIds[m.id] ?? []).includes(g.id);
                         return (
                           <button
                             key={g.id}
