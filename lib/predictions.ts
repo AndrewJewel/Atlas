@@ -1,7 +1,19 @@
 import { supabase } from "./supabase";
 import type { Match } from "./types";
+import type { TKey } from "./i18n";
 
 export type PredWinner = "home" | "away" | "draw";
+
+/**
+ * Devuelve la clave i18n del nivel según los puntos acumulados.
+ * La misma lógica vive en predictor/page.tsx y mas/page.tsx.
+ */
+export function getLevel(points: number, t: (key: TKey) => string): string {
+  if (points >= 60) return t("level_3");
+  if (points >= 30) return t("level_2");
+  if (points >= 10) return t("level_1");
+  return t("level_0");
+}
 
 export interface SavedPrediction {
   id: string;

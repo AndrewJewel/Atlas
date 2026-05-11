@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useUser } from "@/hooks/use-user";
 import { supabase } from "@/lib/supabase";
+import { useLanguage } from "@/contexts/language-context";
 
 type StickerRow = {
   id: number; code: string; name: string; type: string;
@@ -28,6 +29,7 @@ const POS_COLOR: Record<string, string> = {
 export default function TeamPage() {
   const { teamCode } = useParams<{ teamCode: string }>();
   const { user } = useUser();
+  const { t } = useLanguage();
   const [stickers, setStickers] = useState<StickerRow[]>([]);
   const [quantities, setQuantities] = useState<Map<number, number>>(new Map());
   const [loading, setLoading] = useState(true);
@@ -107,20 +109,20 @@ export default function TeamPage() {
           <div className="text-[16px] font-bold" style={{ color: owned===total && total>0?"#22C55E":"#F97316" }}>
             {owned}/{total}
           </div>
-          <div className="text-[10px] text-atlas-dimmed">pegados</div>
+          <div className="text-[10px] text-atlas-dimmed">{t("pn_sticker_count")}</div>
         </div>
       </div>
 
       {/* Legend */}
       <div className="flex items-center gap-3 px-4 py-2 flex-shrink-0"
         style={{ background:"var(--atlas-surface)", borderBottom:"1px solid var(--atlas-border)" }}>
-        {[["Vacío","var(--atlas-surface2)","#4A5178"],["Tengo","rgba(34,197,94,0.12)","#22C55E"],["Repetido","rgba(249,115,22,0.12)","#F97316"]].map(([l,bg,c]) => (
+        {[[t("pn_legend_empty"),"var(--atlas-surface2)","#4A5178"],[t("pn_legend_have"),"rgba(34,197,94,0.12)","#22C55E"],[t("pn_legend_dupe"),"rgba(249,115,22,0.12)","#F97316"]].map(([l,bg,c]) => (
           <div key={l} className="flex items-center gap-1">
             <div className="w-3 h-3 rounded-sm border" style={{ background:bg, borderColor:c }} />
             <span className="text-[10px]" style={{ color:c }}>{l}</span>
           </div>
         ))}
-        <span className="text-[10px] text-atlas-dimmed ml-auto">Toca para cambiar estado</span>
+        <span className="text-[10px] text-atlas-dimmed ml-auto">{t("pn_legend_tap")}</span>
       </div>
 
       {loading ? (

@@ -1,6 +1,6 @@
 "use client";
 export const dynamic = "force-dynamic";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useUser } from "@/hooks/use-user";
@@ -9,6 +9,7 @@ import { useLanguage } from "@/contexts/language-context";
 import { LANGS, type Lang } from "@/lib/i18n";
 import { AppHeader } from "@/components/app-header";
 import { TrophyIcon } from "@/components/TrophyIcon";
+import { loadUserPredictions, getLevel } from "@/lib/predictions";
 
 export default function MasPage() {
   const { user, completeProfile, signOut } = useUser();
@@ -22,6 +23,15 @@ export default function MasPage() {
   const [nameError, setNameError] = useState("");
   const [signingOut, setSigningOut] = useState(false);
   const [showLangPicker, setShowLangPicker] = useState(false);
+  const [totalPoints, setTotalPoints] = useState(0);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    loadUserPredictions().then((preds) => {
+      const pts = preds.reduce((s, p) => s + (p.points_earned ?? 0), 0);
+      setTotalPoints(pts);
+    });
+  }, [user?.id]);
 
   function startEdit() {
     setNewName(user?.username ?? "");
@@ -100,7 +110,7 @@ export default function MasPage() {
                 </div>
               )}
               <div className="text-[13px] font-semibold text-atlas-primary mt-0.5">
-                {t("level_0")} · 0 pts
+                {getLevel(totalPoints, t)} · {totalPoints} pts
               </div>
             </div>
 

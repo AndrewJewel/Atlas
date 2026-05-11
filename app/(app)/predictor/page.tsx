@@ -22,6 +22,7 @@ import {
   getMatchLiveScore,
   calculateGroupPoints,
   isMatchLocked,
+  getLevel,
   type SavedPrediction,
   type RankingEntry,
   type UserGroup,
@@ -86,12 +87,6 @@ export default function PredictorPage() {
   const locale = LOCALE_MAP[lang] ?? "es-AR";
   const [tab, setTab] = useState<Tab>("torneo");
 
-  function levelFromPoints(pts: number): string {
-    if (pts >= 60) return t("level_3");
-    if (pts >= 30) return t("level_2");
-    if (pts >= 10) return t("level_1");
-    return t("level_0");
-  }
 
   // ── Torneo ────────────────────────────────────────────
   const [preds, setPreds] = useState<SavedPrediction[]>([]);
@@ -213,7 +208,7 @@ export default function PredictorPage() {
   const predMap = new Map(preds.map((p) => [p.match_id, p]));
   const totalPoints = preds.reduce((s, p) => s + (p.points_earned ?? 0), 0);
   const predicted = preds.length;
-  const level = levelFromPoints(totalPoints);
+  const level = getLevel(totalPoints, t);
   // Unlocked matches + locked matches that already have a prediction
   const torneoMatches = MATCHES.filter((m) => !isMatchLocked(m) || predMap.has(m.id));
   const openUnpredicted = torneoMatches.filter((m) => !isMatchLocked(m) && !predMap.has(m.id));
@@ -526,7 +521,7 @@ export default function PredictorPage() {
                       opacity: canSave ? 1 : 0.6,
                     }}
                   >
-                    {saving === m.id ? t("saving") : isLocked ? "🔒 Bloqueado" : savedPred ? "Actualizar predicción" : t("save_score")}
+                    {saving === m.id ? t("saving") : isLocked ? t("pred_locked") : savedPred ? t("pred_update") : t("save_score")}
                   </button>
                 </div>
               );
@@ -674,7 +669,7 @@ export default function PredictorPage() {
                                     <div className="px-4 py-3" style={{ borderBottom: "1px solid var(--atlas-glass)" }}>
                                       {myBet && (
                                         <div className="text-[10px] font-bold text-atlas-dimmed tracking-wide mb-2 text-center uppercase">
-                                          Tu apuesta · Editar
+                                          {t("pred_edit_bet")}
                                         </div>
                                       )}
 
@@ -735,7 +730,7 @@ export default function PredictorPage() {
                                           opacity: canSaveBet || betSaveResult ? 1 : 0.6,
                                         }}
                                       >
-                                        {savingBet ? t("saving") : betSaveResult === "ok" ? "✓ Guardado" : betSaveResult === "error" ? "Error al guardar" : myBet ? "Actualizar apuesta" : t("save_score")}
+                                        {savingBet ? t("saving") : betSaveResult === "ok" ? t("pred_saved") : betSaveResult === "error" ? t("pred_save_error") : myBet ? t("pred_update_bet") : t("save_score")}
                                       </button>
                                     </div>
                                   )}
@@ -747,7 +742,7 @@ export default function PredictorPage() {
                                     </div>
                                   ) : sortedBets.length === 0 ? (
                                     <div className="px-4 py-4 text-[13px] text-atlas-dimmed text-center">
-                                      Sin miembros en este grupo
+                                      {t("pred_no_members")}
                                     </div>
                                   ) : (
                                     sortedBets.map((entry, idx) => {

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/use-user";
 import { supabase } from "@/lib/supabase";
+import { useLanguage } from "@/contexts/language-context";
 
 type DupeRow = {
   sticker_id: number; quantity: number;
@@ -23,6 +24,7 @@ const FLAG: Record<string, string> = {
 export default function RepetidosPage() {
   const { user } = useUser();
   const router = useRouter();
+  const { t } = useLanguage();
   const [dupes, setDupes] = useState<DupeRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchCode, setSearchCode] = useState("");
@@ -53,10 +55,10 @@ export default function RepetidosPage() {
   }, [dupes, searchCode]);
 
   async function createOffer(offeredStickerId: number) {
-    if (!user || !requestCode.trim()) { setOfferError("Ingresa el código del cromo que buscas"); return; }
+    if (!user || !requestCode.trim()) { setOfferError(t("pn_offer_enter_code")); return; }
     const target = allStickers.find(s => s.code.toLowerCase() === requestCode.trim().toLowerCase());
-    if (!target) { setOfferError(`Cromo "${requestCode}" no encontrado`); return; }
-    if (target.id === offeredStickerId) { setOfferError("No puedes intercambiar un cromo por sí mismo"); return; }
+    if (!target) { setOfferError(t("pn_offer_not_found").replace("{code}", requestCode)); return; }
+    if (target.id === offeredStickerId) { setOfferError(t("pn_offer_self")); return; }
 
     setOfferError("");
     await supabase.from("trade_offers").insert({
@@ -77,11 +79,11 @@ export default function RepetidosPage() {
         style={{ background:"var(--atlas-surface)", borderBottom:"1px solid var(--atlas-border)" }}>
         <Link href="/mas/panini" className="text-[22px] text-atlas-text leading-none">←</Link>
         <span style={{ fontFamily:"var(--font-display)" }} className="text-[20px] font-bold text-atlas-text tracking-tight flex-1">
-          Repetidos ({dupes.length})
+          {t("pn_dupes_title")} ({dupes.length})
         </span>
         <Link href="/mas/panini/intercambios" className="text-[13px] font-semibold px-3 py-1.5 rounded-xl"
           style={{ background:"rgba(249,115,22,0.12)", color:"#F97316", border:"1px solid rgba(249,115,22,0.25)" }}>
-          Intercambios
+          {t("pn_trades_title")}
         </Link>
       </div>
 
@@ -90,7 +92,7 @@ export default function RepetidosPage() {
         <input
           className="w-full px-3.5 py-2 rounded-2xl text-atlas-text text-[13px] outline-none"
           style={{ background:"var(--atlas-surface)", border:"1px solid var(--atlas-glass-md)", fontFamily:"var(--font-sans)" }}
-          placeholder="Buscar por código o nombre…"
+          placeholder={t("pn_search_placeholder")}
           value={searchCode}
           onChange={e => setSearchCode(e.target.value)}
         />
@@ -103,7 +105,7 @@ export default function RepetidosPage() {
       ) : filtered.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center gap-3 opacity-50">
           <span className="text-[40px]">🔁</span>
-          <span className="text-[14px] text-atlas-muted">No tienes cromos repetidos</span>
+          <span className="text-[14px] text-atlas-muted">{t("pn_no_dupes")}</span>
         </div>
       ) : (
         <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-2" style={{ minHeight:0 }}>
@@ -132,13 +134,13 @@ export default function RepetidosPage() {
                   <div className="flex-1 min-w-0">
                     <div className="text-[11px] font-bold text-atlas-primary">{d.sticker.code}</div>
                     <div className="text-[13px] font-semibold text-atlas-text truncate">{d.sticker.name}</div>
-                    <div className="text-[11px] text-atlas-muted">{d.sticker.team_name ?? "Especial"}</div>
+                    <div className="text-[11px] text-atlas-muted">{d.sticker.team_name ?? t("pn_special")}</div>
                   </div>
                   {/* Excess badge */}
                   <div className="text-center flex-shrink-0">
                     <div className="w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-bold text-white"
                       style={{ background:"#F97316" }}>+{excess}</div>
-                    <div className="text-[9px] text-atlas-dimmed mt-0.5">extra</div>
+                    <div className="text-[9px] text-atlas-dimmed mt-0.5">{t("pn_extra")}</div>
                   </div>
                   {/* Offer button */}
                   <button
@@ -149,7 +151,7 @@ export default function RepetidosPage() {
                       color: isCreating ? "#fff" : "#F97316",
                       border:`1px solid rgba(249,115,22,${isCreating?"0.8":"0.3"})`,
                     }}>
-                    {isCreating ? "Cancelar" : "Ofrecer"}
+                    {isCreating ? t("pn_cancel_offer") : t("pn_offer_trade")}
                   </button>
                 </div>
 
@@ -157,14 +159,14 @@ export default function RepetidosPage() {
                 {isCreating && (
                   <div className="mt-1 p-3 rounded-2xl" style={{ background:"rgba(249,115,22,0.06)", border:"1px solid rgba(249,115,22,0.2)" }}>
                     <div className="text-[12px] text-atlas-muted mb-2">
-                      ¿Qué cromo quieres a cambio? Ingresa el código exacto (ej: <span className="text-atlas-primary font-bold">ARG-20</span>)
+                      {t("pn_offer_hint")} <span className="text-atlas-primary font-bold">ARG-20</span>)
                     </div>
                     <div className="flex gap-2">
                       <input
                         autoFocus
                         className="flex-1 px-3 py-2 rounded-xl text-[13px] text-atlas-text outline-none uppercase"
                         style={{ background:"var(--atlas-surface)", border:"1px solid var(--atlas-glass-md)", fontFamily:"var(--font-sans)" }}
-                        placeholder="Ej: MEX-10"
+                        placeholder={t("pn_offer_placeholder")}
                         value={requestCode}
                         onChange={e => { setRequestCode(e.target.value.toUpperCase()); setOfferError(""); }}
                         onKeyDown={e => e.key === "Enter" && createOffer(d.sticker_id)}
@@ -173,7 +175,7 @@ export default function RepetidosPage() {
                         onClick={() => createOffer(d.sticker_id)}
                         className="px-4 py-2 rounded-xl text-[13px] font-semibold text-white flex-shrink-0"
                         style={{ background:"#F97316" }}>
-                        Publicar
+                        {t("pn_offer_publish")}
                       </button>
                     </div>
                     {offerError && <div className="text-[11px] mt-1.5" style={{ color:"#EF4444" }}>{offerError}</div>}

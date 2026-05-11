@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useUser } from "@/hooks/use-user";
 import { supabase } from "@/lib/supabase";
+import { useLanguage } from "@/contexts/language-context";
 
 type TradeRow = {
   id: string;
@@ -45,6 +46,7 @@ function StickerChip({ code, name, teamCode }: { code: string; name: string; tea
 
 export default function IntercambiosPage() {
   const { user } = useUser();
+  const { t } = useLanguage();
   const [tab, setTab] = useState<"open"|"mine">("open");
   const [trades, setTrades] = useState<TradeRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -107,17 +109,17 @@ export default function IntercambiosPage() {
         style={{ background:"var(--atlas-surface)", borderBottom:"1px solid var(--atlas-border)" }}>
         <Link href="/mas/panini" className="text-[22px] text-atlas-text leading-none">←</Link>
         <span style={{ fontFamily:"var(--font-display)" }} className="text-[20px] font-bold text-atlas-text tracking-tight flex-1">
-          Intercambios
+          {t("pn_trades_title")}
         </span>
         <Link href="/mas/panini/repetidos" className="text-[13px] font-semibold px-3 py-1.5 rounded-xl"
           style={{ background:"rgba(249,115,22,0.12)", color:"#F97316", border:"1px solid rgba(249,115,22,0.25)" }}>
-          + Ofrecer
+          {t("pn_offer_btn")}
         </Link>
       </div>
 
       {/* Tabs */}
       <div className="flex gap-0 flex-shrink-0" style={{ borderBottom:"1px solid var(--atlas-border)" }}>
-        {([["open","Disponibles",open.length],["mine","Mis ofertas",mine.length]] as const).map(([key,label,count]) => (
+        {([["open",t("pn_tab_available"),open.length],["mine",t("pn_tab_mine"),mine.length]] as const).map(([key,label,count]) => (
           <button key={key} onClick={() => setTab(key)}
             className="flex-1 py-3 text-[13px] font-semibold transition-all"
             style={{
@@ -139,48 +141,48 @@ export default function IntercambiosPage() {
         <div className="flex-1 flex flex-col items-center justify-center gap-3 opacity-50">
           <span className="text-[40px]">🔁</span>
           <span className="text-[14px] text-atlas-muted">
-            {tab === "open" ? "Nadie en tus grupos tiene intercambios activos" : "No tienes ofertas activas"}
+            {tab === "open" ? t("pn_trade_no_active") : t("pn_trade_no_mine")}
           </span>
           {tab === "open" && (
             <Link href="/grupos" className="text-[13px] font-semibold text-atlas-primary">
-              Invita amigos a tu grupo →
+              {t("pn_invite_friends")}
             </Link>
           )}
         </div>
       ) : (
         <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-2.5" style={{ minHeight:0 }}>
-          {displayed.map(t => {
-            const isActing = acting === t.id;
-            const isMine = t.from_user_id === user?.id;
+          {displayed.map(trade => {
+            const isActing = acting === trade.id;
+            const isMine = trade.from_user_id === user?.id;
             return (
-              <div key={t.id} className="p-3 rounded-2xl"
+              <div key={trade.id} className="p-3 rounded-2xl"
                 style={{ background:"var(--atlas-surface)", border:"1px solid var(--atlas-border)" }}>
                 {/* User + time */}
                 <div className="flex items-center justify-between mb-2.5">
                   <div className="flex items-center gap-1.5">
                     <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px]"
                       style={{ background:"rgba(249,115,22,0.15)", color:"#F97316" }}>
-                      {t.from_username.charAt(0).toUpperCase()}
+                      {trade.from_username.charAt(0).toUpperCase()}
                     </div>
-                    <span className="text-[12px] font-semibold text-atlas-text">{t.from_username}</span>
+                    <span className="text-[12px] font-semibold text-atlas-text">{trade.from_username}</span>
                     {isMine && <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
-                      style={{ background:"rgba(249,115,22,0.1)", color:"#F97316" }}>Tú</span>}
+                      style={{ background:"rgba(249,115,22,0.1)", color:"#F97316" }}>{t("pn_trade_you")}</span>}
                   </div>
                   <span className="text-[10px] text-atlas-dimmed">
-                    {new Date(t.created_at).toLocaleDateString("es", { day:"numeric", month:"short" })}
+                    {new Date(trade.created_at).toLocaleDateString("es", { day:"numeric", month:"short" })}
                   </span>
                 </div>
 
                 {/* Sticker exchange */}
                 <div className="flex items-center gap-2">
                   <div className="flex-1">
-                    <div className="text-[9px] text-atlas-dimmed mb-1">OFRECE</div>
-                    <StickerChip code={t.offered.code} name={t.offered.name} teamCode={t.offered.team_code} />
+                    <div className="text-[9px] text-atlas-dimmed mb-1">{t("pn_trade_offers")}</div>
+                    <StickerChip code={trade.offered.code} name={trade.offered.name} teamCode={trade.offered.team_code} />
                   </div>
                   <div className="text-[18px] text-atlas-dimmed flex-shrink-0">⇄</div>
                   <div className="flex-1">
-                    <div className="text-[9px] text-atlas-dimmed mb-1">BUSCA</div>
-                    <StickerChip code={t.requested.code} name={t.requested.name} teamCode={t.requested.team_code} />
+                    <div className="text-[9px] text-atlas-dimmed mb-1">{t("pn_trade_wants")}</div>
+                    <StickerChip code={trade.requested.code} name={trade.requested.name} teamCode={trade.requested.team_code} />
                   </div>
                 </div>
 
@@ -188,27 +190,27 @@ export default function IntercambiosPage() {
                 <div className="flex gap-2 mt-3">
                   {isMine ? (
                     <button
-                      onClick={() => act(t.id, "cancelled")}
+                      onClick={() => act(trade.id, "cancelled")}
                       disabled={isActing}
                       className="flex-1 py-2 rounded-xl text-[12px] font-semibold transition-all"
                       style={{ background:"rgba(239,68,68,0.08)", color:"#EF4444", border:"1px solid rgba(239,68,68,0.2)" }}>
-                      {isActing ? "..." : "Cancelar oferta"}
+                      {isActing ? "..." : t("pn_trade_cancel")}
                     </button>
                   ) : (
                     <>
                       <button
-                        onClick={() => act(t.id, "rejected")}
+                        onClick={() => act(trade.id, "rejected")}
                         disabled={isActing}
                         className="py-2 px-4 rounded-xl text-[12px] font-semibold transition-all"
                         style={{ background:"rgba(239,68,68,0.08)", color:"#EF4444", border:"1px solid rgba(239,68,68,0.2)" }}>
                         {isActing ? "..." : "✕"}
                       </button>
                       <button
-                        onClick={() => act(t.id, "accepted")}
+                        onClick={() => act(trade.id, "accepted")}
                         disabled={isActing}
                         className="flex-1 py-2 rounded-xl text-[12px] font-semibold text-white transition-all"
                         style={{ background:"#F97316", opacity: isActing ? 0.6 : 1 }}>
-                        {isActing ? "..." : "✓ Aceptar intercambio"}
+                        {isActing ? "..." : t("pn_trade_accept")}
                       </button>
                     </>
                   )}

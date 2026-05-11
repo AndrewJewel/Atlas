@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useUser } from "@/hooks/use-user";
 import { supabase } from "@/lib/supabase";
+import { useLanguage } from "@/contexts/language-context";
 
 type StickerRow = {
   id: number; code: string; name: string;
@@ -30,6 +31,7 @@ const GROUPS = ["GRUPO A","GRUPO B","GRUPO C","GRUPO D","GRUPO E","GRUPO F",
 
 export default function PaniniPage() {
   const { user } = useUser();
+  const { t } = useLanguage();
   const [stickers, setStickers] = useState<StickerRow[]>([]);
   const [owned, setOwned] = useState<Map<number, number>>(new Map());
   const [loading, setLoading] = useState(true);
@@ -87,11 +89,11 @@ export default function PaniniPage() {
         style={{ background:"var(--atlas-surface)", borderBottom:"1px solid var(--atlas-border)" }}>
         <Link href="/mas" className="text-[22px] text-atlas-text leading-none">←</Link>
         <span style={{ fontFamily:"var(--font-display)" }} className="text-[20px] font-bold text-atlas-text tracking-tight flex-1">
-          Álbum Panini 2026
+          {t("pn_title")}
         </span>
         <Link href="/mas/panini/intercambios" className="text-[13px] font-semibold px-3 py-1.5 rounded-xl"
           style={{ background:"rgba(249,115,22,0.12)", color:"#F97316", border:"1px solid rgba(249,115,22,0.25)" }}>
-          Intercambios
+          {t("pn_trades_btn")}
         </Link>
       </div>
 
@@ -105,9 +107,9 @@ export default function PaniniPage() {
           <div className="px-4 py-3 flex-shrink-0" style={{ background:"var(--atlas-surface)", borderBottom:"1px solid var(--atlas-border)" }}>
             <div className="flex justify-around mb-3">
               {[
-                { val: totalOwned, label: "TENGO",     color: "#22C55E" },
-                { val: total - totalOwned, label: "FALTAN",    color: "#EF4444" },
-                { val: totalDupes, label: "REPETIDOS", color: "#F97316" },
+                { val: totalOwned, label: t("pn_stat_have"),    color: "#22C55E" },
+                { val: total - totalOwned, label: t("pn_stat_missing"), color: "#EF4444" },
+                { val: totalDupes, label: t("pn_stat_dupes"),   color: "#F97316" },
               ].map(({ val, label, color }) => (
                 <div key={label} className="flex flex-col items-center gap-0.5">
                   <span style={{ fontFamily:"var(--font-display)", color }} className="text-[26px] font-extrabold">{val}</span>
@@ -118,7 +120,7 @@ export default function PaniniPage() {
             <div className="h-2 rounded-full overflow-hidden mb-1.5" style={{ background:"var(--atlas-surface2)" }}>
               <div className="h-full rounded-full transition-all" style={{ width:`${pct}%`, background:"linear-gradient(90deg,#F97316,#FB923C)" }} />
             </div>
-            <p className="text-center text-[11px] text-atlas-muted">{pct}% completado · {totalOwned}/{total} cromos</p>
+            <p className="text-center text-[11px] text-atlas-muted">{pct}% {t("pn_progress")} · {totalOwned}/{total} {t("pn_stickers")}</p>
           </div>
 
           {/* Filters + Repetidos link */}
@@ -131,13 +133,13 @@ export default function PaniniPage() {
                   color: filter===f ? "#fff" : "#8892B0",
                   border:`1px solid ${filter===f?"#F97316":"var(--atlas-glass-md)"}`,
                 }}>
-                {f==="all"?"Todo":f==="owned"?"Completos":"Incompletos"}
+                {f==="all"?t("pn_filter_all"):f==="owned"?t("pn_filter_owned"):t("pn_filter_missing")}
               </button>
             ))}
             <Link href="/mas/panini/repetidos"
               className="flex-shrink-0 ml-auto px-3 py-1.5 rounded-full text-[12px] font-semibold"
               style={{ background:"rgba(249,115,22,0.12)", color:"#F97316", border:"1px solid rgba(249,115,22,0.25)" }}>
-              Repetidos ({totalDupes})
+              {t("pn_dupes_link")} ({totalDupes})
             </Link>
           </div>
 
@@ -151,8 +153,8 @@ export default function PaniniPage() {
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center text-[22px] flex-shrink-0"
                   style={{ background:"linear-gradient(135deg,#F97316,#FBBF24)" }}>⭐</div>
                 <div className="flex-1">
-                  <div className="text-[14px] font-bold text-atlas-text">Introducción + Museo FIFA</div>
-                  <div className="text-[11px] text-atlas-muted mt-0.5">Cromos especiales dorados</div>
+                  <div className="text-[14px] font-bold text-atlas-text">{t("pn_fwc_title")}</div>
+                  <div className="text-[11px] text-atlas-muted mt-0.5">{t("pn_fwc_sub")}</div>
                 </div>
                 <div className="text-right flex-shrink-0">
                   <div className="text-[16px] font-bold" style={{ color: fwcOwned === fwcStickers.length ? "#22C55E" : "#F97316" }}>
