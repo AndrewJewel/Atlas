@@ -204,10 +204,7 @@ export default function PartidosPage() {
       {/* Matches */}
       <div className="flex-1 overflow-y-auto pb-4">
         {dayMatches.map((m) => {
-          // DEMO_TEMP: remove after showing finished card example
-          const live = m.id === 1
-            ? { homeCode: "MEX", awayCode: "RSA", homeScore: 2, awayScore: 1, status: "finished" as const, minute: "90", date: "2026-06-11" }
-            : scores.get(`${m.home.code}-${m.away.code}`);
+          const live = scores.get(`${m.home.code}-${m.away.code}`);
           const isLive     = live?.status === "live";
           const isFinished = live?.status === "finished";
           const hasScore   = isLive || isFinished;
